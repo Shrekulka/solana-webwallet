@@ -1,0 +1,196 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Byte-compiled / optimized / DLL files
+pycache/
+*.py[cod]
+*.pyc          # Compiled Python files
+*.pyo          # Optimized Python files
+__pycache__/   # Python cache directory
+
+# Distribution / packaging
+.Python
+build/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Scrapy stuff
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+ipython_config.py           # IPython config file
+
+# pyenv
+.python-version             # pyenv version file
+
+# poetry
+#poetry.lock                # Poetry lock file
+
+# pdm
+#pdm.lock                   # PDM lock file
+.pdm.toml                   # PDM project-wide configuration
+
+# PEP 582
+pypackages/                 # PEP 582 directory
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env                        # Environment variable file
+*.env
+*.env.local
+*.env.staging
+.venv/                      # Virtual environment directory
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# JetBrains specific template
+.idea/                      # JetBrains IDE project directory
+
+# Ignore session files
+.*.swp                     # Temporary files
+.*.swo
+
+# Pylint cache
+*.pylint-cache
+
+# Autopep8 cache
+.autopep8-cache/
+
+# Mypy cache
+.mypy_cache/
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+
+# Visual Studio Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Pytest cache
+.pytest_cache/
+
+# Windows binaries
+*.pyd
