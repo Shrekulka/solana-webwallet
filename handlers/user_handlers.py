@@ -13,7 +13,7 @@ from database.database import get_db
 from external_services.solana.solana import (
     get_sol_balance, get_transaction_history, http_client, transfer_token, buy_token,
     sell_token)
-from keyboards.keyboards import wallet_keyboard
+from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import SolanaWallet, User
@@ -23,100 +23,60 @@ from states.states import FSMWallet
 user_router: Router = Router()
 
 
+# Обработчик команды старта бота
 @user_router.message(CommandStart())
-async def process_start_command(message: Message) -> None:
+async def process_start_command(message: Message, state: FSMContext) -> None:
     try:
+        # Логирование информации о сообщении в формате JSON
         logger.info(message.model_dump_json(indent=4, exclude_none=True))
-        await message.answer(LEXICON[message.text].format(first_name=message.from_user.first_name),
-                             reply_markup=wallet_keyboard)
+
+        # Отправка сообщения пользователю с приветственным текстом и клавиатурой
+        start_message = await message.answer(
+            LEXICON["/start"].format(first_name=message.from_user.first_name),
+            reply_markup=main_keyboard)
+
+        # Получение сессии базы данных
         async with await get_db() as session:
+            # Поиск пользователя в базе данных по ID Telegram
             user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
             user = user.scalar()
+            # Если пользователь не найден, создаем новую запись о нем в базе данных
             if not user:
                 new_user = User(telegram_id=message.from_user.id, username=message.from_user.username)
                 session.add(new_user)
                 await session.commit()
     except Exception as e:
-        logger.error(f"Error in process_start_command: {e}")
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_start_command: {e}\n{detailed_send_message_error}")
 
 
+# Объявление функции обработки команды "/help"
 @user_router.message(Command(commands='help'))
-async def process_help_command(message: Message) -> None:
-    """
-    Handler for the "/help" command.
-
-    Args:
-        message (types.Message): The user's message object.
-        db (Session): SQLAlchemy session object.
-
-    Returns:
-        None
-
-    Sends a message to the user with a list of available commands in the bot.
-    """
+async def process_help_command(message: Message, state: FSMContext) -> None:
     try:
-        # Выводим апдейт в терминал
+        # Выводим информацию об объекте сообщения в лог терминала
         logger.info(message.model_dump_json(indent=4, exclude_none=True))
 
-        await message.answer(LEXICON[message.text])
+        # Отправляем сообщение со справочной информацией о командах из лексикона
+        await message.answer(LEXICON["/help"])
+        # Отправляем дополнительное сообщение для продолжения с выбором пунктов меню
+        await message.answer(LEXICON["start_message_continue"], reply_markup=main_keyboard)
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_command: {e}\n{detailed_send_message_error}")
 
 
-# изменить StateFilter
 @user_router.callback_query(F.data == "callback_button_create_wallet")
 async def process_create_wallet_command(callback: CallbackQuery, state: FSMContext) -> None:
     try:
-
-        await callback.message.edit_text("Please enter the name for your wallet.")
+        # Отправляем сообщение с просьбой ввести имя для кошелька
+        await callback.message.edit_text(LEXICON["wallet_name_prompt"])
         # Переход в состояние добавления имени кошелька
         await state.set_state(FSMWallet.add_name_wallet)
 
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_help_command: {e}\n{detailed_send_message_error}")
-
-
-
-@user_router.message(StateFilter(FSMWallet.add_name_wallet))
-async def process_wallet_name(message: Message, state: FSMContext) -> None:
-    """
-    Handler for processing wallet name input.
-    """
-    try:
-        logger.info(message.model_dump_json(indent=4, exclude_none=True))
-
-        # Cохраняем введенное имя в хранилище по ключу "name"
-        await state.update_data(wallet_name=message.text)
-        data = await state.get_data()
-        name = data.get("wallet_name")
-        logger.info(f"Wallet name: {name}")
-        await message.answer(text=f'Ваше имя кошелька {name}')
-        await message.answer(text='Спасибо!\n\nА теперь введите ваше описание')
-        # Переходим к добавлению описания кошелька
-        await state.set_state(FSMWallet.add_description_wallet)
-    except Exception as e:
-        logger.error(f"Error in process_wallet_name: {e}")
-
-
-@user_router.message(StateFilter(FSMWallet.add_description_wallet), F.text.isalpha())
-async def process_wallet_description(message: Message, state: FSMContext) -> None:
-    """
-    Handler for processing wallet description input.
-    """
-    try:
-        await state.update_data(wallet_description=message.text)
-        data = await state.get_data()
-        name = data.get("wallet_name")
-        description = data.get("wallet_description")
-        async with await get_db() as session:
-            wallet = await SolanaWallet.create(session, message.from_user.id, name=name, description=description)
-        await message.answer(f"Wallet created successfully!\nWallet address: {wallet.wallet_address}")
-        # Завершаем состояние добавления кошелька
-        await state.clear()
-    except Exception as e:
-        logger.error(f"Error in process_wallet_description: {e}")
+        logger.error(f"Error in process_create_wallet_command: {e}\n{detailed_send_message_error}")
 
 
 @user_router.callback_query(F.data == "callback_button_connect_wallet")

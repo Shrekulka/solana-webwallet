@@ -194,3 +194,5 @@ dist/
 
 # Windows binaries
 *.pyd
+
+.idea 
