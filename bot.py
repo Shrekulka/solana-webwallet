@@ -5,9 +5,10 @@ import traceback
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.redis import RedisStorage, Redis
 
 from config_data.config import config
-from database.database import AsyncSessionLocal
+from database.database import init_database
 from handlers import user_handlers
 from logger_config import logger
 
@@ -23,22 +24,32 @@ async def main() -> None:
         Returns:
             None
     """
+    # Инициализируем Redis
+    redis = Redis(host='localhost')
+
+    # Инициализируем хранилище (создаем экземпляр класса MemoryStorage)
+    storage = RedisStorage(redis=redis)
 
     logger.info("Initializing bot...")
     # Инициализируем бот и диспетчер
     bot: Bot = Bot(token=config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
-    dp: Dispatcher = Dispatcher()
+    dp: Dispatcher = Dispatcher(storage=storage)
     logger.info("Bot initialized successfully.")
 
-    # Создание сессии для взаимодействия с базой данных
-    async with AsyncSessionLocal() as session:
-        # Регистрируем роутеры в диспетчере
-        dp.include_router(user_handlers.user_router)
-        # dp.include_router(other_handlers.other_router(session))
+    # Сохраняем объект bot в хранилище workflow_data диспетчера dp. Это позволит использовать один и тот же объект
+    # bot во всех обработчиках без необходимости явно передавать его из функции в функцию
+    # dp.workflow_data['bot'] = bot
 
-        # Пропускаем накопившиеся апдейты и запускаем polling
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+    # Регистрируем роутеры в диспетчере
+    dp.include_router(user_handlers.user_router)
+    # dp.include_router(other_handlers.other_router(session))
+
+    # Проверяем наличие базы данных и инициализируем ее при необходимости
+    await init_database()
+
+    # Пропускаем накопившиеся апдейты и запускаем polling
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
 
 if __name__ == '__main__':
