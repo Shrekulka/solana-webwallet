@@ -11,11 +11,12 @@ from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import SolanaWallet
 from states.states import FSMWallet
+from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 
 wallet_router: Router = Router()
 
 
-@wallet_router.message(StateFilter(FSMWallet.add_name_wallet))
+@wallet_router.message(StateFilter(FSMWallet.add_name_wallet), lambda message: is_valid_wallet_name(message.text))
 async def process_wallet_name(message: Message, state: FSMContext) -> None:
     """
     Handler for processing wallet name input.
@@ -37,7 +38,20 @@ async def process_wallet_name(message: Message, state: FSMContext) -> None:
         logger.error(f"Error in process_wallet_name: {e}")
 
 
-@wallet_router.message(StateFilter(FSMWallet.add_description_wallet))
+@wallet_router.message(StateFilter(FSMWallet.add_name_wallet))
+async def process_invalid_wallet_name(message: Message, state: FSMContext) -> None:
+    """
+    Handler for processing invalid wallet name input.
+    """
+    try:
+        await message.answer(text=LEXICON["invalid_wallet_name"])
+        await message.answer(text=LEXICON["wallet_name_prompt"])
+    except Exception as e:
+        logger.error(f"Error in process_invalid_wallet_name: {e}")
+
+
+@wallet_router.message(StateFilter(FSMWallet.add_description_wallet),
+                       lambda message: is_valid_wallet_description(message.text))
 async def process_wallet_description(message: Message, state: FSMContext) -> None:
     """
     Handler for processing wallet description input.
@@ -53,9 +67,22 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         await message.answer(
             LEXICON["wallet_created_successfully"].format(wallet_name=wallet.name,
                                                           wallet_description=wallet.description,
-                                                          wallet_address=wallet.wallet_address))
+                                                          wallet_address=wallet.wallet_address,
+                                                          private_key=wallet.private_key))
         # Завершаем состояние добавления кошелька
         await state.clear()
         await message.answer(LEXICON["continue_message"], reply_markup=main_keyboard)
     except Exception as e:
         logger.error(f"Error in process_wallet_description: {e}")
+
+
+@wallet_router.message(StateFilter(FSMWallet.add_description_wallet))
+async def process_invalid_wallet_description(message: Message, state: FSMContext) -> None:
+    """
+    Handler for processing invalid wallet description input.
+    """
+    try:
+        await message.answer(text=LEXICON["invalid_wallet_description"])
+        await message.answer(text=LEXICON["wallet_description_prompt"])
+    except Exception as e:
+        logger.error(f"Error in process_invalid_wallet_description: {e}")

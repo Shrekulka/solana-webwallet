@@ -1,12 +1,14 @@
 # solana_wallet_telegram_bot/models/models.py
-
+import traceback
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy import DateTime, func
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from database.database import Base
 from external_services.solana.solana import create_solana_wallet
+from logger_config import logger
 
 
 class SolanaWallet(Base):
@@ -35,9 +37,10 @@ class SolanaWallet(Base):
     user = relationship('User', back_populates='wallets')
 
     @classmethod
-    async def create(cls, session, user_id, name=None, description=None):
+    async def create(cls, session, user_id, name, description=None):
         # Генерация нового кошелька Solana с помощью внешней функции create_solana_wallet()
         wallet_address, private_key = await create_solana_wallet()
+
         # Создание нового экземпляра класса SolanaWallet с указанными параметрами
         wallet = cls(wallet_address=wallet_address, private_key=private_key, user_id=user_id, name=name,
                      description=description)
@@ -54,15 +57,22 @@ class SolanaWallet(Base):
 
     @classmethod
     async def switch(cls, session, user_id, wallet_address):
-        # Поиск кошелька в базе данных по указанному пользователю и адресу кошелька
-        wallet = await session.query(cls).filter_by(user_id=user_id, wallet_address=wallet_address).first()
-        # Если кошелек найден (не является None)
-        if wallet:
-            # Возвращаем найденный кошелек
-            return wallet
-        else:
-            # Если кошелек не найден, возвращаем None
-            # Добавляем обработку случая, когда кошелек не найден
+        try:
+            # Поиск кошелька в базе данных по указанному пользователю и адресу кошелька
+            wallet = await session.query(cls).filter_by(user_id=user_id, wallet_address=wallet_address).first()
+            # Если кошелек найден (не является None)
+            if wallet:
+                # Возвращаем найденный кошелек
+                return wallet
+            else:
+                # Если кошелек не найден, возвращаем None
+                return None
+        except NoResultFound:
+            # Обработка случая, когда кошелек не найден
+            return None
+        except Exception as e:
+            detailed_error_traceback = traceback.format_exc()
+            logger.error(f"Error during wallet switch: {e}\n{detailed_error_traceback}")
             return None
 
 

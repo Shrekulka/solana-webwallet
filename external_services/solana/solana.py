@@ -38,13 +38,11 @@ async def create_solana_wallet() -> Tuple[str, str]:
         # Возвращаем публичный адрес кошелька и приватный ключ кошелька как кортеж
         return wallet_address, private_key
 
-    # Если происходит ошибка с ключом (KeyError) или значением (ValueError)
-    except (KeyError, ValueError) as e:
+    except Exception as e:
         detailed_error_traceback = traceback.format_exc()
-        # Логирование ошибки
         logger.error(f"Failed to create Solana wallet: {e}\n{detailed_error_traceback}")
         # Поднятие нового исключения с подробной информацией
-        raise Exception(f"Failed to create Solana wallet: {e}\n{detailed_error_traceback}")
+        raise Exception(f"Failed to create Solana wallet: {e}")
 
 
 async def get_sol_balance(wallet_address, client):

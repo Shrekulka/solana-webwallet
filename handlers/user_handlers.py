@@ -24,7 +24,7 @@ user_router: Router = Router()
 
 
 # Обработчик команды старта бота
-@user_router.message(CommandStart())
+@user_router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message, state: FSMContext) -> None:
     try:
         # Логирование информации о сообщении в формате JSON
@@ -51,7 +51,7 @@ async def process_start_command(message: Message, state: FSMContext) -> None:
 
 
 # Объявление функции обработки команды "/help"
-@user_router.message(Command(commands='help'))
+@user_router.message(Command(commands='help'), StateFilter(default_state))
 async def process_help_command(message: Message, state: FSMContext) -> None:
     try:
         # Выводим информацию об объекте сообщения в лог терминала
@@ -66,7 +66,7 @@ async def process_help_command(message: Message, state: FSMContext) -> None:
         logger.error(f"Error in process_create_wallet_command: {e}\n{detailed_send_message_error}")
 
 
-@user_router.callback_query(F.data == "callback_button_create_wallet")
+@user_router.callback_query(F.data == "callback_button_create_wallet", StateFilter(default_state))
 async def process_create_wallet_command(callback: CallbackQuery, state: FSMContext) -> None:
     try:
         # Отправляем сообщение с просьбой ввести имя для кошелька
@@ -104,7 +104,7 @@ async def process_balance_command(callback: CallbackQuery, db: Session = get_db(
         # Проверка наличия кошелька пользователя.
         if user_wallet:
             # Если кошелек пользователя существует, получаем его баланс.
-            balance = await get_sol_balance(user_wallet.address, http_client)
+            balance = await get_sol_balance(user_wallet.wallet_address, http_client)
             # Отправляем ответ пользователю с сообщением об успешном получении баланса.
             await callback.answer(LEXICON["balance_success"].format(balance=balance))
         else:

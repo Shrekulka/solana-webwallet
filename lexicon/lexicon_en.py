@@ -15,20 +15,25 @@ GENERAL_MESSAGE = {
     "donate": "💝 Donate to the team",
 }
 
-# Сообщения для 'connect_wallet'
 CREATE_WALLET_MESSAGE = {
     "create_wallet": "🔑 Create wallet",
     "create_wallet_success": "🎉 <b><i>Wallet successfully created!</i></b>\n"
-                             "<i>Wallet address:</i> {wallet_address}",
+                             "<i>Wallet address:</i> {wallet_address}\n"
+                             "<i>Base58 Wallet address:</i> {base58_wallet_address}",
     "wallet_name_prompt": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
     "wallet_name_confirmation_thanks": "🙏 <b>Thank you!</b>",
     "wallet_description_prompt": "💬 <b>Now, please enter the description for your wallet:</b>",
-    "wallet_created_successfully": "💼 <b>Wallet created successfully!</b>\n"
+    "wallet_created_successfully": "🎉 <b>Wallet created successfully!</b>\n"
                                    "<b><i>Wallet name:</i> {wallet_name}</b>\n"
                                    "<b><i>Wallet description:</i> {wallet_description}</b>\n"
-                                   "<b><i>Wallet address:</i> {wallet_address}</b>",
+                                   "<b><i>Wallet address:</i> {wallet_address}</b>\n"
+                                   "<b><i>Private key:</i> {private_key}</b>\n",
     "continue_message": "➡️ <b>Let's continue!</b>\n<i>Choose an option from the menu:</i>",
+    "invalid_wallet_name": "❌ <b>Invalid wallet name entered.</b>\n"
+                           "Please enter a valid name for your wallet.",
+    "invalid_wallet_description": "❌ <b>Invalid wallet description entered.</b>\n"
+                                  "Please enter a valid description for your wallet."
 }
 
 # Сообщения для 'connect_wallet'
