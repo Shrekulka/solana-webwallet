@@ -1,4 +1,4 @@
-# solana_wallet_telegram_bot/handlers/wallet_handlers.py
+# solana_wallet_telegram_bot/handlers/create_wallet_handlers.py
 import traceback
 
 from aiogram import Router

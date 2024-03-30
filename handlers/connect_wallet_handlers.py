@@ -7,8 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from database.database import get_db
-from external_services.solana.solana import is_valid_wallet_address, get_wallet_address_from_private_key, \
-    is_valid_private_key
+from external_services.solana.solana import is_valid_wallet_address, get_wallet_address_from_private_key
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger

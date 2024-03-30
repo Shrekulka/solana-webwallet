@@ -9,10 +9,11 @@ from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
 from database.database import get_db
+from external_services.solana.solana import get_sol_balance, http_client
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import User
+from models.models import User, SolanaWallet
 from states.states import FSMWallet
 
 # Инициализируем роутер уровня модуля
@@ -119,7 +120,7 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
         # Выводим информацию об объекте сообщения в лог терминала
         logger.info(callback.model_dump_json(indent=4, exclude_none=True))
 
-        # Запрашиваем у пользователя адрес и закрытый ключ кошелька
+        # Запрашиваем у пользователя адрес кошелька
         await callback.message.edit_text(LEXICON["connect_wallet_prompt"])
         # Переход в состояние добавления
         await state.set_state(FSMWallet.connect_wallet_address)
@@ -127,7 +128,75 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_connect_wallet_command: {e}\n{detailed_send_message_error}")
 
-#
+
+@user_router.callback_query(F.data == "callback_button_transfer", StateFilter(default_state))
+async def process_transfer_token_command(callback: CallbackQuery, state: FSMContext) -> None:
+    try:
+        # Журналирование информации о коллбэке
+        logger.info(callback.model_dump_json(indent=4, exclude_none=True))
+
+        # Получение доступа к базе данных
+        async with await get_db() as session:
+            # Получение кошельков пользователя из базы данных
+            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=callback.from_user.id))
+            # Преобразование результатов запроса в список скаляров
+            user_wallets = user_wallets.scalars().all()
+
+        # Если у пользователя есть кошельки
+        if user_wallets:
+            # Список для хранения опций кошельков
+            wallet_options = []
+            # Перебор кошельков пользователя
+            for wallet in user_wallets:
+                # Получение баланса кошелька
+                balance = await get_sol_balance(wallet.wallet_address, http_client)
+                # Добавление информации о кошельке в список опций
+                wallet_options.append(f"{wallet.name} ({wallet.wallet_address}) - {balance} SOL")
+
+            # Формирование текста опций кошельков
+            wallet_options_text = "\n".join(wallet_options)
+            # Редактирование текста сообщения с опциями кошельков
+            await callback.message.edit_text(f"{LEXICON['choose_sender_wallet']}\n\n{wallet_options_text}")
+            # Установка состояния выбора отправителя
+            await state.set_state(FSMWallet.choose_sender_wallet)
+        else:
+            # Если у пользователя нет кошельков, отправляем сообщение об ошибке
+            await callback.message.edit_text(LEXICON["no_wallets_connected"])
+    except Exception as e:
+        # Обработка и логирование ошибки
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_send_message_error}")
+
+# # Объявление обработчика колбэка для кнопки "callback_button_transfer".
+# @user_router.callback_query(F.data == "callback_button_transfer")
+# async def process_transfer_token_command(callback: CallbackQuery) -> None:
+#     # Начало асинхронной транзакции с использованием сессии базы данных.
+#     async with session.begin():
+#         # Выполнение запроса к базе данных для получения кошелька пользователя по его идентификатору.
+#         result = await session.execute(select(SolanaWallet).filter_by(user_id=callback.from_user.id))
+#         # Извлечение первого результата запроса (кошелька пользователя).
+#         user_wallet = result.scalars().first()
+#         # Проверка наличия кошелька пользователя.
+#         if user_wallet:
+#             # Если кошелек пользователя существует, отправляем ответ с запросом на ввод информации о трансфере токена.
+#             await callback.answer(LEXICON["input_prompt"])
+#             # Получаем данные о получателе, токене и сумме от пользователя.
+#             token_data = await callback.text()
+#             recipient_address, token_mint_address, amount = token_data.split()
+#             try:
+#                 # Преобразование суммы в формат float.
+#                 amount = float(amount)
+#                 # Выполнение операции трансфера токена.
+#                 await transfer_token(user_wallet, recipient_address, token_mint_address, amount, http_client)
+#                 # Отправка ответа пользователю об успешном трансфере токена.
+#                 await callback.answer(LEXICON["transfer_success"].format(recipient_address=recipient_address))
+#             except ValueError:
+#                 # Обработка ошибки при некорректном формате ввода от пользователя.
+#                 await callback.answer(LEXICON["send_invalid_format"])
+#         else:
+#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             await callback.answer(LEXICON["no_registered_wallet"])
+
 # @user_router.callback_query(F.data == "callback_button_balance")
 # async def process_balance_command(callback: CallbackQuery, db: Session = get_db()) -> None:
 #     """
@@ -237,35 +306,7 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
 #             await callback.answer(LEXICON["no_registered_wallet"])
 #
 #
-# # Объявление обработчика колбэка для кнопки "callback_button_transfer".
-# @user_router.callback_query(F.data == "callback_button_transfer")
-# async def process_transfer_token_command(callback: CallbackQuery) -> None:
-#     # Начало асинхронной транзакции с использованием сессии базы данных.
-#     async with session.begin():
-#         # Выполнение запроса к базе данных для получения кошелька пользователя по его идентификатору.
-#         result = await session.execute(select(SolanaWallet).filter_by(user_id=callback.from_user.id))
-#         # Извлечение первого результата запроса (кошелька пользователя).
-#         user_wallet = result.scalars().first()
-#         # Проверка наличия кошелька пользователя.
-#         if user_wallet:
-#             # Если кошелек пользователя существует, отправляем ответ с запросом на ввод информации о трансфере токена.
-#             await callback.answer(LEXICON["input_prompt"])
-#             # Получаем данные о получателе, токене и сумме от пользователя.
-#             token_data = await callback.text()
-#             recipient_address, token_mint_address, amount = token_data.split()
-#             try:
-#                 # Преобразование суммы в формат float.
-#                 amount = float(amount)
-#                 # Выполнение операции трансфера токена.
-#                 await transfer_token(user_wallet, recipient_address, token_mint_address, amount, http_client)
-#                 # Отправка ответа пользователю об успешном трансфере токена.
-#                 await callback.answer(LEXICON["transfer_success"].format(recipient_address=recipient_address))
-#             except ValueError:
-#                 # Обработка ошибки при некорректном формате ввода от пользователя.
-#                 await callback.answer(LEXICON["send_invalid_format"])
-#         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
-#             await callback.answer(LEXICON["no_registered_wallet"])
+
 #
 #
 # # Объявление обработчика колбэка для кнопки "callback_button_transaction".

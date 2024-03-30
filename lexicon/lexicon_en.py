@@ -70,9 +70,15 @@ TOKEN_SELL_MESSAGES = {
 
 # Сообщения для переноса
 TOKEN_TRANSFER_MESSAGE = {
-    "input_prompt": "Введите адрес получателя, адрес мята токена и количество токенов для "
-                    "перевода через пробел (например, 'RecipientAddress TokenMintAddress 100')",
-    "transfer_success": "Токены успешно переведены на адрес {recipient_address}"
+    "transfer_recipient_address_prompt": "Введите адрес кошелька получателя:",
+    "transfer_amount_prompt": "Введите количество токенов для передачи:",
+    "invalid_wallet_address": "Неверный адрес кошелька.",
+    "transfer_successful": "Перевод {amount} SOL на адрес {recipient} выполнен успешно.",
+    "insufficient_balance": "Недостаточно средств на вашем кошельке для данного перевода.",
+    "no_wallet_connected": "Пожалуйста, подключите кошелек перед переводом токенов.",
+    "choose_sender_wallet": "Выберите кошелек отправителя:",
+    "invalid_wallet_choice": "Неверный выбор кошелька.",
+    "no_wallets_connected": "У вас нет подключенных кошельков. Подключите кошелек перед переводом токенов."
 }
 
 # Сообщения для обработки команды transactions
