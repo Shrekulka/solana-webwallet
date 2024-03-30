@@ -25,15 +25,15 @@ async def main() -> None:
             None
     """
     # # Инициализируем Redis
-    # redis = Redis(host='localhost')
+    redis = Redis(host='localhost')
     #
     # # Инициализируем хранилище (создаем экземпляр класса MemoryStorage)
-    # storage = RedisStorage(redis=redis)
+    storage = RedisStorage(redis=redis)
 
     logger.info("Initializing bot...")
     # Инициализируем бот и диспетчер
     bot: Bot = Bot(token=config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
-    dp: Dispatcher = Dispatcher()#(storage=storage)
+    dp: Dispatcher = Dispatcher(storage=storage)
     logger.info("Bot initialized successfully.")
 
     # Сохраняем объект bot в хранилище workflow_data диспетчера dp. Это позволит использовать один и тот же объект
