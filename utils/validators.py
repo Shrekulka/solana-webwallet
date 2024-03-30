@@ -2,8 +2,6 @@
 
 import re
 
-from nacl.public import PublicKey
-
 
 def is_valid_wallet_name(name):
     pattern = r'^[\w\d\s\-_]+$'
@@ -25,11 +23,3 @@ def is_valid_wallet_description(description):
 
     # Проверка соответствия регулярному выражению
     return bool(re.match(pattern, description))
-
-
-def is_valid_solana_address(address):
-    try:
-        PublicKey(address)
-        return True
-    except ValueError:
-        return False

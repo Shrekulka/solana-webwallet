@@ -9,7 +9,7 @@ from aiogram.fsm.storage.redis import RedisStorage, Redis
 
 from config_data.config import config
 from database.database import init_database
-from handlers import user_handlers, wallet_handlers
+from handlers import user_handlers, create_wallet_handlers, connect_wallet_handlers
 from logger_config import logger
 
 
@@ -24,16 +24,16 @@ async def main() -> None:
         Returns:
             None
     """
-    # Инициализируем Redis
-    redis = Redis(host='localhost')
-
-    # Инициализируем хранилище (создаем экземпляр класса MemoryStorage)
-    storage = RedisStorage(redis=redis)
+    # # Инициализируем Redis
+    # redis = Redis(host='localhost')
+    #
+    # # Инициализируем хранилище (создаем экземпляр класса MemoryStorage)
+    # storage = RedisStorage(redis=redis)
 
     logger.info("Initializing bot...")
     # Инициализируем бот и диспетчер
     bot: Bot = Bot(token=config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
-    dp: Dispatcher = Dispatcher(storage=storage)
+    dp: Dispatcher = Dispatcher()#(storage=storage)
     logger.info("Bot initialized successfully.")
 
     # Сохраняем объект bot в хранилище workflow_data диспетчера dp. Это позволит использовать один и тот же объект
@@ -42,7 +42,8 @@ async def main() -> None:
 
     # Регистрируем роутеры в диспетчере
     dp.include_router(user_handlers.user_router)
-    dp.include_router(wallet_handlers.wallet_router)
+    dp.include_router(create_wallet_handlers.create_wallet_router)
+    dp.include_router(connect_wallet_handlers.connect_wallet_router)
     # dp.include_router(other_handlers.other_router(session))
 
     # Проверяем наличие базы данных и инициализируем ее при необходимости

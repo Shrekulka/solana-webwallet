@@ -7,7 +7,8 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from database.database import Base
-from external_services.solana.solana import create_solana_wallet
+from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address, \
+    get_wallet_address_from_private_key
 from logger_config import logger
 
 
@@ -37,7 +38,19 @@ class SolanaWallet(Base):
     user = relationship('User', back_populates='wallets')
 
     @classmethod
-    async def create(cls, session, user_id, name, description=None):
+    async def wallet_create(cls, session, user_id, name, description=None):
+        """
+            Class method for creating a wallet.
+
+            Args:
+                session: Database session.
+                user_id: User identifier.
+                name: Wallet name.
+                description (optional): Wallet description.
+
+            Returns:
+                SolanaWallet: The created wallet.
+        """
         # Генерация нового кошелька Solana с помощью внешней функции create_solana_wallet()
         wallet_address, private_key = await create_solana_wallet()
 
@@ -51,8 +64,47 @@ class SolanaWallet(Base):
         # Возвращение созданного кошелька
         return wallet
 
-    async def delete(self, session):
-        session.delete(self)
+    @classmethod
+    async def connect_wallet(cls, session, user_id, wallet_address: str, private_key: str) -> 'SolanaWallet':
+        """
+            Class method for connecting a wallet.
+
+            Args:
+                session: Database session.
+                user_id: User identifier.
+                wallet_address (str): Wallet address.
+                private_key (str): Wallet private key.
+
+            Returns:
+                SolanaWallet: The connected wallet.
+
+            Raises:
+                ValueError: If the wallet address is invalid or does not match the private key.
+        """
+        # Проверка валидности адреса кошелька
+        if not is_valid_wallet_address(wallet_address):
+            raise ValueError("Неверный адрес кошелька")
+
+        # Получение адреса кошелька из закрытого ключа
+        derived_wallet_address = get_wallet_address_from_private_key(private_key)
+
+        # Проверка соответствия адреса и закрытого ключа
+        if derived_wallet_address != wallet_address:
+            raise ValueError("Адрес кошелька не соответствует закрытому ключу")
+
+        # Создание нового экземпляра класса SolanaWallet с переданными параметрами
+        wallet = cls(wallet_address=wallet_address, private_key=private_key, user_id=user_id)
+        # Добавление созданного кошелька в сессию базы данных
+        session.add(wallet)
+        # Сохранение изменений в базе данных
+        await session.commit()
+
+        # Возвращение созданного кошелька
+        return wallet
+
+    @classmethod
+    async def delete(cls, session):
+        session.delete(cls)
         await session.commit()
 
     @classmethod

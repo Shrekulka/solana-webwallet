@@ -17,12 +17,8 @@ GENERAL_MESSAGE = {
 
 CREATE_WALLET_MESSAGE = {
     "create_wallet": "🔑 Create wallet",
-    "create_wallet_success": "🎉 <b><i>Wallet successfully created!</i></b>\n"
-                             "<i>Wallet address:</i> {wallet_address}\n"
-                             "<i>Base58 Wallet address:</i> {base58_wallet_address}",
     "wallet_name_prompt": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
-    "wallet_name_confirmation_thanks": "🙏 <b>Thank you!</b>",
     "wallet_description_prompt": "💬 <b>Now, please enter the description for your wallet:</b>",
     "wallet_created_successfully": "🎉 <b>Wallet created successfully!</b>\n"
                                    "<b><i>Wallet name:</i> {wallet_name}</b>\n"
@@ -38,7 +34,13 @@ CREATE_WALLET_MESSAGE = {
 
 # Сообщения для 'connect_wallet'
 CONNECT_WALLET_MESSAGE = {
-    "connect_wallet": "Connect wallet"
+    "connect_wallet_prompt": "🔗 Пожалуйста, введите адрес своего кошелька Solana.",
+    "connect_wallet": "🔗 Connect wallet",
+    "connect_wallet_address_prompt": "🔑 Введите адрес кошелька для подключения к боту",
+    "invalid_wallet_address": "❌ Некорректный адрес кошелька Solana",
+    "wallet_connected_successfully": "🎉 Кошелек с адресом {wallet_address}\nуспешно подключен к боту",
+    "invalid_private_key": "❌ Некорректный приватный ключ кошелька",
+    "connect_wallet_private_key_prompt": "🔑 Пожалуйста, введите корректный приватный ключ вашего кошелька Solana",
 }
 
 # Сообщения для обработки команды balance

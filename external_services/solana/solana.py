@@ -45,6 +45,89 @@ async def create_solana_wallet() -> Tuple[str, str]:
         raise Exception(f"Failed to create Solana wallet: {e}")
 
 
+def get_wallet_address_from_private_key(private_key: str) -> str:
+    """
+        Gets the wallet address from the private key.
+
+        Args:
+            private_key (str): A string containing the presumed private key.
+
+        Returns:
+            str: The wallet address as a string.
+    """
+    # Создание объекта Keypair из закрытого ключа, преобразованного из шестнадцатеричной строки в байтовый формат.
+    # Метод from_seed используется для создания ключевой пары на основе семени (seed), которое представляет собой
+    # закрытый ключ в байтовом формате.
+    # Мы используем метод bytes.fromhex для преобразования шестнадцатеричной строки в байтовый формат.
+    keypair = Keypair.from_seed(bytes.fromhex(private_key))
+
+    # Получение публичного адреса кошелька из объекта Keypair
+    wallet_address = str(keypair.pubkey())
+
+    # Возвращение адреса кошелька в виде строки
+    return wallet_address
+
+
+def is_valid_wallet_address(address: str) -> bool:
+    """
+        Checks whether the input string is a valid Solana wallet address.
+
+        Args:
+            address (str): A string containing the presumed wallet address.
+
+        Returns:
+            bool: True if the address is valid, False otherwise.
+    """
+    try:
+        # Создание объекта PublicKey из строки адреса.
+        # Метод from_string используется для создания объекта PublicKey из строки, содержащей адрес кошелька.
+        # Этот метод позволяет создать объект PublicKey, который может быть использован для проверки подписей
+        # или других операций, связанных с публичным ключом кошелька.
+        Pubkey.from_string(address)
+
+        # Если создание объекта PublicKey прошло успешно, значит адрес валиден
+        return True
+    except ValueError:
+        # Если возникает ошибка, значит адрес невалиден, возвращаем False
+        return False
+
+
+def is_valid_private_key(private_key: str) -> bool:
+    """
+        Checks whether the input string is a valid Solana private key.
+
+        Args:
+            private_key (str): A string containing the presumed private key.
+
+        Returns:
+            bool: True if the private key is valid, False otherwise.
+    """
+    try:
+        # Проверяем длину приватного ключа Solana
+        # Если длина ключа 64 символа, это hex-представление
+        if len(private_key) == 64:
+            # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
+            # а затем создание объекта Keypair из этих байтов.
+            # Этот метод используется для создания объекта Keypair, который может быть использован для
+            # подписывания транзакций или выполнения других операций, связанных с приватным ключом.
+            Keypair.from_bytes(bytes.fromhex(private_key))
+        # Если длина ключа 32 символа, это представление в бинарном формате
+        elif len(private_key) == 32:
+            # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
+            # а затем создание объекта Keypair из этих байтов.
+            # Этот метод используется для создания объекта Keypair из приватного ключа с использованием его seed.
+            Keypair.from_seed(bytes.fromhex(private_key))
+        else:
+            # Если длина ключа не соответствует ожидаемой длине, возвращаем False
+            return False
+        # Если создание объекта Keypair прошло успешно, значит приватный ключ валиден
+        return True
+    except ValueError:
+        # Если возникает ошибка, значит приватный ключ невалиден, возвращаем False
+        return False
+
+
+########################################################################################################################
 async def get_sol_balance(wallet_address, client):
     try:
         # Получение баланса кошелька
