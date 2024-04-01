@@ -109,7 +109,12 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
     """
     try:
         # Преобразуем текст сообщения, содержащий сумму перевода, в число с плавающей точкой.
-        amount = float(message.text)
+        # Проверяем что число
+        try:
+            amount = float(message.text)
+        except ValueError:
+            raise ValueError
+
         # Получаем данные из состояния чата.
         data = await state.get_data()
         # Извлекаем адрес отправителя из данных состояния.
@@ -122,13 +127,13 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
         try:
             # Пытаемся получить текущий баланс отправителя.
             balance = await get_sol_balance(sender_address, http_client)
-
             # Запрашиваем минимальный баланс для аренды освобождения.
             # Аргумент функции - размер данных в байтах, для которых требуется выделить место в памяти.
-            min_balance_resp = http_client.get_minimum_balance_for_rent_exemption(1)
-
+            # min_balance_resp = http_client.get_minimum_balance_for_rent_exemption(1)
+            min_balance_resp = (await http_client.get_minimum_balance_for_rent_exemption(1)).value
             # Извлекаем значение минимального баланса из ответа. Min balance: 897840lamports/1000000000 = 0.00089784 Sol
-            min_balance = min_balance_resp.value / 10 ** 9
+            # min_balance = min_balance_resp.value / 10 ** 9
+            min_balance = min_balance_resp / 10 ** 9
             logger.debug(f"Balance: {balance}, Min balance: {min_balance}")
 
         # В случае возникновения ошибки при получении баланса отправителя или минимального баланса.

@@ -92,7 +92,8 @@ TOKEN_TRANSFER_MESSAGE = {
     "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
     "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
     "save_wallet": "<i>Yes</i>",
-    "cancel": "<i>No</i>"
+    "cancel": "<i>No</i>",
+    "invalid_amount": "<b>❌ Invalid amount.</b>",
 }
 
 

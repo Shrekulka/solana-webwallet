@@ -13,7 +13,8 @@ from solders.system_program import transfer, TransferParams
 from logger_config import logger
 
 # Создание клиента для подключения к тестовой сети Devnet
-http_client = Client("https://api.devnet.solana.com")
+# http_client = Client("https://api.devnet.solana.com")
+http_client = AsyncClient("https://api.devnet.solana.com")
 
 
 async def create_solana_wallet() -> Tuple[str, str]:
@@ -130,7 +131,8 @@ def is_valid_private_key(private_key: str) -> bool:
 ########################################################################################################################
 async def get_sol_balance(wallet_address, client):
     try:
-        balance = client.get_balance(Pubkey.from_string(wallet_address)).value
+        # balance = client.get_balance(Pubkey.from_string(wallet_address)).value
+        balance = (await client.get_balance(Pubkey.from_string(wallet_address))).value
         # Преобразование лампортов в SOL
         sol_balance = balance / 10 ** 9
         logger.debug(f"wallet_address: {wallet_address}, balance: {balance}, sol_balance: {sol_balance}")
@@ -189,7 +191,9 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
     # Отправляем транзакцию клиенту
     response = await client.send_transaction(txn, sender_keypair)
     # Подтверждаем транзакцию
-    await client.confirm_transaction(response.value)
+    res = await client.confirm_transaction(response.value)
+    print('res: ', res, type(res))
+    print('res: ', dir(res))
     # Возвращаем True, если перевод выполнен успешно
     return True
 
