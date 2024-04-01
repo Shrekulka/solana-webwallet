@@ -1,9 +1,8 @@
 # solana_wallet_telegram_bot/models/models.py
 import traceback
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, select
 from sqlalchemy import DateTime, func
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from database.database import Base
@@ -103,6 +102,17 @@ class SolanaWallet(Base):
         return wallet
 
     @classmethod
+    async def update_wallet(cls, session, user_id, wallet_address, name=None, description=None):
+        wallet = await cls.switch(session, user_id=user_id, wallet_address=wallet_address)
+        if wallet:
+            if name:
+                wallet.name = name
+            if description:
+                wallet.description = description
+            await session.commit()
+        return wallet
+
+    @classmethod
     async def delete(cls, session):
         session.delete(cls)
         await session.commit()
@@ -110,19 +120,14 @@ class SolanaWallet(Base):
     @classmethod
     async def switch(cls, session, user_id, wallet_address):
         try:
-            # Поиск кошелька в базе данных по указанному пользователю и адресу кошелька
-            wallet = await session.query(cls).filter_by(user_id=user_id, wallet_address=wallet_address).first()
-            # Если кошелек найден (не является None)
-            if wallet:
-                # Возвращаем найденный кошелек
-                return wallet
-            else:
-                # Если кошелек не найден, возвращаем None
-                return None
-        except NoResultFound:
-            # Обработка случая, когда кошелек не найден
-            return None
+            # Выполняем запрос к базе данных
+            result = await session.execute(select(cls).filter_by(user_id=user_id, wallet_address=wallet_address))
+            # Получаем результаты запроса
+            wallet = result.scalar_one_or_none()
+            # Возвращаем найденный кошелек (или None, если не найден)
+            return wallet
         except Exception as e:
+            # Обработка ошибки
             detailed_error_traceback = traceback.format_exc()
             logger.error(f"Error during wallet switch: {e}\n{detailed_error_traceback}")
             return None

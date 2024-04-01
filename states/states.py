@@ -26,5 +26,6 @@ class FSMWallet(StatesGroup):
     connect_wallet_address = State()      # Состояние подключения кошелька по адресу
     connect_wallet_private_key = State()  # Состояние подключения кошелька по приватному ключу
     choose_sender_wallet = State()        # Состояние выбора кошелька отправителя
+    confirm_save_new_wallet = State ()
     transfer_recipient_address = State()  # Состояние ввода адреса кошелька получателя
     transfer_amount = State()             # Состояние ввода количества токенов для передачи

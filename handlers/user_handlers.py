@@ -141,22 +141,29 @@ async def process_transfer_token_command(callback: CallbackQuery, state: FSMCont
             user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=callback.from_user.id))
             # Преобразование результатов запроса в список скаляров
             user_wallets = user_wallets.scalars().all()
-
+        await callback.message.edit_text(LEXICON['list_sender_wallets'])
         # Если у пользователя есть кошельки
         if user_wallets:
             # Список для хранения опций кошельков
-            wallet_options = []
-            # Перебор кошельков пользователя
+            # Счетчик для номера по порядку
+            counter = 1
+            # Отправка информации о каждом кошельке
             for wallet in user_wallets:
                 # Получение баланса кошелька
                 balance = await get_sol_balance(wallet.wallet_address, http_client)
-                # Добавление информации о кошельке в список опций
-                wallet_options.append(f"{wallet.name} ({wallet.wallet_address}) - {balance} SOL")
+                # Формирование текста сообщения для текущего кошелька
+                message_text = LEXICON['wallet_info_template'].format(
+                    number=counter,
+                    name=wallet.name,
+                    address=wallet.wallet_address,
+                    balance=balance
+                )
+                # Отправка сообщения с информацией о текущем кошельке
+                await callback.message.answer(message_text)
+                # Увеличение счетчика
+                counter += 1
 
-            # Формирование текста опций кошельков
-            wallet_options_text = "\n".join(wallet_options)
-            # Редактирование текста сообщения с опциями кошельков
-            await callback.message.edit_text(f"{LEXICON['choose_sender_wallet']}\n\n{wallet_options_text}")
+            await callback.message.answer(LEXICON['choose_sender_wallet'])
             # Установка состояния выбора отправителя
             await state.set_state(FSMWallet.choose_sender_wallet)
         else:

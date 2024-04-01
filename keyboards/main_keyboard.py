@@ -4,7 +4,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from lexicon.lexicon_en import LEXICON
 
-########################################################################################################################
 # Создание объектов кнопок с текстом из словаря и соответствующими callback_data
 button_create_wallet = InlineKeyboardButton(text=LEXICON["create_wallet"],
                                             callback_data="callback_button_create_wallet")

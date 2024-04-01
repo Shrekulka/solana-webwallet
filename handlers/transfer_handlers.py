@@ -1,14 +1,15 @@
 # solana_wallet_telegram_bot/handlers/transfer_handlers.py
 import traceback
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
 from database.database import get_db
 from external_services.solana.solana import is_valid_wallet_address, get_sol_balance, http_client, transfer_token
+from keyboards.transfer_keyboards import transfer_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import SolanaWallet
@@ -32,19 +33,24 @@ async def process_choose_sender_wallet(message: Message, state: FSMContext) -> N
         # Создание словаря для хранения опций кошельков
         wallet_options = {f"{wallet.name} ({wallet.wallet_address})": wallet for wallet in user_wallets}
 
-        # Если текст сообщения есть в опциях кошельков
-        if message.text in wallet_options:
-            # Получение выбранного кошелька
-            selected_wallet = wallet_options[message.text]
-            # Обновление данных состояния с адресом и приватным ключом отправителя
-            await state.update_data(sender_address=selected_wallet.wallet_address,
-                                    sender_private_key=selected_wallet.private_key)
-            # Отправка запроса на ввод адреса получателя
-            await message.answer(LEXICON["transfer_recipient_address_prompt"])
-            # Установка состояния ввода адреса получателя
-            await state.set_state(FSMWallet.transfer_recipient_address)
+        # Если введенный текст является адресом кошелька
+        if is_valid_wallet_address(message.text):
+            # Проверяем, есть ли такой адрес в базе
+            selected_wallet = next((wallet for wallet in user_wallets if wallet.wallet_address == message.text), None)
+            if selected_wallet:
+                # Обновление данных состояния с адресом и приватным ключом отправителя
+                await state.update_data(sender_address=selected_wallet.wallet_address,
+                                        sender_private_key=selected_wallet.private_key)
+                # Отправка запроса на ввод адреса получателя
+                await message.answer(LEXICON["transfer_recipient_address_prompt"])
+                # Установка состояния ввода адреса получателя
+                await state.set_state(FSMWallet.transfer_recipient_address)
+            else:
+                await message.answer(LEXICON["save_new_wallet_prompt"], reply_markup=transfer_keyboard)
+                await state.update_data(new_wallet_address=message.text)
+                await state.set_state(FSMWallet.confirm_save_new_wallet)
         else:
-            # Если выбран неверный кошелек, отправляем сообщение об ошибке
+            # Если введен неверный адрес кошелька, отправляем сообщение об ошибке
             await message.answer(LEXICON["invalid_wallet_choice"])
             # Запрос на повторный выбор отправителя
             await message.answer(LEXICON["choose_sender_wallet"])
@@ -52,6 +58,36 @@ async def process_choose_sender_wallet(message: Message, state: FSMContext) -> N
         # Обработка и логирование ошибки
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_choose_sender_wallet: {e}\n{detailed_error_traceback}")
+
+
+# Обработчик подтверждения сохранения нового кошелька
+@transfer_router.callback_query(F.data == "callback_button_save_wallet", StateFilter(FSMWallet.confirm_save_new_wallet))
+async def confirm_save_new_wallet(callback: CallbackQuery, state: FSMContext) -> None:
+    try:
+        data = await state.get_data()
+        new_wallet_address = data.get("new_wallet_address")
+
+        # Скрытие клавиатуры
+        await callback.message.edit_reply_markup(reply_markup=None)
+        # Запрашиваем имя кошелька
+        await callback.message.answer(LEXICON["wallet_name_prompt"])
+        await state.set_state(FSMWallet.add_name_wallet)
+        await state.update_data(wallet_address=new_wallet_address)
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in confirm_save_new_wallet: {e}\n{detailed_error_traceback}")
+
+
+# Обработчик отмены сохранения нового кошелька
+@transfer_router.callback_query(F.data == "callback_button_cancel", StateFilter(FSMWallet.confirm_save_new_wallet))
+async def cancel_save_new_wallet(callback: CallbackQuery, state: FSMContext) -> None:
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+        await callback.message.answer(LEXICON["transfer_recipient_address_prompt"])
+        await state.set_state(FSMWallet.transfer_recipient_address)
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in cancel_save_new_wallet: {e}\n{detailed_error_traceback}")
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_recipient_address))
@@ -75,10 +111,13 @@ async def process_transfer_recipient_address(message: Message, state: FSMContext
 async def process_transfer_amount(message: Message, state: FSMContext) -> None:
     try:
         amount = float(message.text)
+        data = await state.get_data()
+        sender_address = data.get("sender_address")
+        logger.debug(f"Sender_address: {sender_address}")
 
         async with await get_db() as session:
             wallet = await SolanaWallet.switch(session, user_id=message.from_user.id, wallet_address=None)
-
+            logger.debug(f"Wallet: {wallet}")
         if wallet:
             balance = await get_sol_balance(wallet.wallet_address, http_client)
 

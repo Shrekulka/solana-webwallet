@@ -76,9 +76,16 @@ TOKEN_TRANSFER_MESSAGE = {
     "transfer_successful": "Перевод {amount} SOL на адрес {recipient} выполнен успешно.",
     "insufficient_balance": "Недостаточно средств на вашем кошельке для данного перевода.",
     "no_wallet_connected": "Пожалуйста, подключите кошелек перед переводом токенов.",
-    "choose_sender_wallet": "Выберите кошелек отправителя:",
+    "list_sender_wallets": "Список Ваших кошельков:",
+    "choose_sender_wallet": "Введите адрес Вашего кошелька:",
     "invalid_wallet_choice": "Неверный выбор кошелька.",
-    "no_wallets_connected": "У вас нет подключенных кошельков. Подключите кошелек перед переводом токенов."
+    "no_wallets_connected": "У вас нет подключенных кошельков. Подключите кошелек перед переводом токенов.",
+    "save_new_wallet_prompt": "Сохранить адрес данного кошелька: ",
+    "wallet_info_template": "{number}) Имя кошелька: {name}\n"
+                            "Адрес кошелька: {address}\n"
+                            "Количество токенов: {balance} SOL\n",
+    "save_wallet": "Yes",
+    "cancel": "No"
 }
 
 # Сообщения для обработки команды transactions
