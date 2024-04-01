@@ -31,9 +31,19 @@ button_settings = InlineKeyboardButton(text=LEXICON["settings"], callback_data="
 button_donate = InlineKeyboardButton(text=LEXICON["donate"], callback_data="callback_button_donate")
 
 # Формирование списка списков кнопок, чтобы каждая кнопка была в отдельном списке
-main_buttons = [[button_create_wallet], [button_connect_wallet], [button_balance], [button_price], [button_buy],
-                [button_sell], [button_transfer], [button_transactions], [button_delete_wallet], [button_settings],
-                [button_donate]]
+main_buttons = [
+    [button_create_wallet],
+    [button_connect_wallet],
+    [button_balance],
+    # [button_price],
+    # [button_buy],
+    # [button_sell],
+    [button_transfer],
+    [button_transactions],
+    # [button_delete_wallet],
+    # [button_settings],
+    # [button_donate],
+]
 
 # Создание клавиатуры инлайн-кнопок с указанием списка кнопок
 main_keyboard = InlineKeyboardMarkup(inline_keyboard=main_buttons)

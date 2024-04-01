@@ -132,48 +132,76 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
 @user_router.callback_query(F.data == "callback_button_transfer", StateFilter(default_state))
 async def process_transfer_token_command(callback: CallbackQuery, state: FSMContext) -> None:
     try:
-        # Журналирование информации о коллбэке
         logger.info(callback.model_dump_json(indent=4, exclude_none=True))
 
-        # Получение доступа к базе данных
         async with await get_db() as session:
-            # Получение кошельков пользователя из базы данных
-            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=callback.from_user.id))
-            # Преобразование результатов запроса в список скаляров
-            user_wallets = user_wallets.scalars().all()
+            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
+            user = user.scalar()
+
+            if user:
+                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
+                user_wallets = user_wallets.scalars().all()
+
         await callback.message.edit_text(LEXICON['list_sender_wallets'])
-        # Если у пользователя есть кошельки
+
         if user_wallets:
-            # Список для хранения опций кошельков
-            # Счетчик для номера по порядку
-            counter = 1
-            # Отправка информации о каждом кошельке
-            for wallet in user_wallets:
-                # Получение баланса кошелька
+
+            for i, wallet in enumerate(user_wallets):
                 balance = await get_sol_balance(wallet.wallet_address, http_client)
-                # Формирование текста сообщения для текущего кошелька
+
                 message_text = LEXICON['wallet_info_template'].format(
-                    number=counter,
+                    number=i+1,
                     name=wallet.name,
                     address=wallet.wallet_address,
                     balance=balance
                 )
-                # Отправка сообщения с информацией о текущем кошельке
+
                 await callback.message.answer(message_text)
-                # Увеличение счетчика
-                counter += 1
 
             await callback.message.answer(LEXICON['choose_sender_wallet'])
-            # Установка состояния выбора отправителя
             await state.set_state(FSMWallet.choose_sender_wallet)
+
         else:
-            # Если у пользователя нет кошельков, отправляем сообщение об ошибке
             await callback.message.edit_text(LEXICON["no_wallets_connected"])
+
     except Exception as e:
-        # Обработка и логирование ошибки
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_send_message_error}")
 
+
+###########################################
+@user_router.callback_query(F.data == "callback_button_balance", StateFilter(default_state))
+async def process_balance_command(callback: CallbackQuery, state: FSMContext) -> None:
+    try:
+        async with await get_db() as session:
+            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
+            user = user.scalar()
+
+            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
+            user_wallets = user_wallets.scalars().all()
+
+        if user_wallets:
+            await callback.message.edit_text(LEXICON['list_sender_wallets'])
+
+            for i, wallet in enumerate(user_wallets):
+                balance = await get_sol_balance(wallet.wallet_address, http_client)
+                message_text = LEXICON['wallet_info_template'].format(
+                    number=i+1,
+                    name=wallet.name,
+                    address=wallet.wallet_address,
+                    balance=balance
+                )
+                await callback.message.answer(message_text)
+
+        else:
+            await callback.answer(LEXICON["no_registered_wallet"])
+
+    except Exception as e:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_balance_command: {e}\n{detailed_send_message_error}")
+
+
+###########################################
 # # Объявление обработчика колбэка для кнопки "callback_button_transfer".
 # @user_router.callback_query(F.data == "callback_button_transfer")
 # async def process_transfer_token_command(callback: CallbackQuery) -> None:

@@ -12,7 +12,7 @@ from external_services.solana.solana import is_valid_wallet_address, get_sol_bal
 from keyboards.transfer_keyboards import transfer_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import SolanaWallet
+from models.models import SolanaWallet, User
 from states.states import FSMWallet
 
 # Инициализируем роутер уровня модуля
@@ -23,18 +23,22 @@ transfer_router: Router = Router()
 @transfer_router.message(StateFilter(FSMWallet.choose_sender_wallet))
 async def process_choose_sender_wallet(message: Message, state: FSMContext) -> None:
     try:
+        user_wallets = []
         # Получение доступа к базе данных
         async with await get_db() as session:
             # Получение кошельков пользователя из базы данных
-            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=message.from_user.id))
-            # Преобразование результатов запроса в список скаляров
-            user_wallets = user_wallets.scalars().all()
+            user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
+            user = user.scalar()
+
+            if user:
+                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
+                user_wallets = user_wallets.scalars().all()
 
         # Создание словаря для хранения опций кошельков
         wallet_options = {f"{wallet.name} ({wallet.wallet_address})": wallet for wallet in user_wallets}
 
         # Если введенный текст является адресом кошелька
-        if is_valid_wallet_address(message.text):
+        if is_valid_wallet_address(message.text) and user_wallets:
             # Проверяем, есть ли такой адрес в базе
             selected_wallet = next((wallet for wallet in user_wallets if wallet.wallet_address == message.text), None)
             if selected_wallet:
@@ -113,25 +117,22 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
         amount = float(message.text)
         data = await state.get_data()
         sender_address = data.get("sender_address")
-        logger.debug(f"Sender_address: {sender_address}")
+        sender_private_key = data.get("sender_private_key")
+        recipient_address = data.get("recipient_address")
 
-        async with await get_db() as session:
-            wallet = await SolanaWallet.switch(session, user_id=message.from_user.id, wallet_address=None)
-            logger.debug(f"Wallet: {wallet}")
-        if wallet:
-            balance = await get_sol_balance(wallet.wallet_address, http_client)
+        balance = await get_sol_balance(sender_address, http_client)
 
-            if balance >= amount:
-                data = await state.get_data()
-                recipient_address = data.get("recipient_address")
+        logger.debug(f"Sender_address: {sender_address}, recipient_address: {recipient_address}, balance: {balance}, amount: {amount}")
 
-                await transfer_token(wallet.wallet_address, wallet.private_key, recipient_address, amount, http_client)
+        if balance >= amount:
+            result = await transfer_token(sender_address, sender_private_key, recipient_address, amount, http_client)
+            if result:
                 await message.answer(LEXICON["transfer_successful"].format(amount=amount, recipient=recipient_address))
             else:
-                await message.answer(LEXICON["insufficient_balance"])
-                await message.answer(LEXICON["transfer_amount_prompt"])
+                await message.answer(LEXICON["transfer_not_successful"].format(amount=amount, recipient=recipient_address))
         else:
-            await message.answer(LEXICON["no_wallet_connected"])
+            await message.answer(LEXICON["insufficient_balance"])
+            await message.answer(LEXICON["transfer_amount_prompt"])
 
         await state.clear()
     except Exception as e:

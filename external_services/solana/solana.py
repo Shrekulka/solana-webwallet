@@ -6,6 +6,7 @@ from solana.rpc.api import Client
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.types import TxOpts
+from solana.transaction import Transaction
 from solders.hash import Hash
 from solders.message import MessageV0
 from solders.pubkey import Pubkey
@@ -111,7 +112,8 @@ def is_valid_private_key(private_key: str) -> bool:
             # а затем создание объекта Keypair из этих байтов.
             # Этот метод используется для создания объекта Keypair, который может быть использован для
             # подписывания транзакций или выполнения других операций, связанных с приватным ключом.
-            Keypair.from_bytes(bytes.fromhex(private_key))
+            Keypair.from_seed(bytes.fromhex(private_key))
+            # Keypair.from_bytes(bytes.fromhex(private_key))
         # Если длина ключа 32 символа, это представление в бинарном формате
         elif len(private_key) == 32:
             # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
@@ -131,13 +133,10 @@ def is_valid_private_key(private_key: str) -> bool:
 ########################################################################################################################
 async def get_sol_balance(wallet_address, client):
     try:
-        # Получение баланса кошелька
         balance = client.get_balance(Pubkey.from_string(wallet_address)).value
-        logger.debug(f"balance: {balance}")
         # Преобразование лампортов в SOL
         sol_balance = balance / 10 ** 9
-        logger.debug(f"sol_balance: {sol_balance}")
-        # Возвращаем баланс кошелька в SOL после преобразования лампортов
+        logger.debug(f"wallet_address: {wallet_address}, balance: {balance}, sol_balance: {sol_balance}")
         return sol_balance
 
     except Exception as e:
@@ -149,68 +148,111 @@ async def get_sol_balance(wallet_address, client):
 async def transfer_token(sender_address: str, sender_private_key: str, recipient_address: str, amount: float,
                          client: AsyncClient) -> None:
     try:
-        # Проверяем валидность адреса отправителя
         if not is_valid_wallet_address(sender_address):
             raise ValueError("Неверный адрес отправителя")
 
-        # Проверяем валидность адреса получателя
         if not is_valid_wallet_address(recipient_address):
             raise ValueError("Неверный адрес получателя")
 
-        # Проверяем валидность приватного ключа отправителя
         if not is_valid_private_key(sender_private_key):
             raise ValueError("Неверный приватный ключ отправителя")
 
-        # Создаем ключевую пару отправителя из приватного ключа
-        sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
+        if is_valid_wallet_address and is_valid_wallet_address and is_valid_private_key:
+            sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
 
-        # Получаем публичный ключ получателя из его адреса
-        recipient_pubkey = Pubkey(bytes(recipient_address, 'utf-8'))
+            txn = Transaction().add(
+                transfer(
+                    TransferParams(
+                        from_pubkey=sender_keypair.pubkey(),
+                        to_pubkey=Pubkey.from_string(recipient_address),
+                        # Количество лампортов для перевода, преобразованное из суммы SOL.
+                        lamports=int(amount * 10 ** 9),
+                    )
+                )
+            )
 
-        # Преобразуем сумму перевода из SOL в лампорты
-        lamports = int(amount * 10 ** 9)
+            response = client.send_transaction(txn, sender_keypair)
+            client.confirm_transaction(response.value)
 
-        # Получаем последний хеш блока для использования в транзакции
-        blockhash_bytes = bytes((await client.get_latest_blockhash()).value)
-        blockhash = Hash(blockhash_bytes)
-
-        # Создаем инструкцию перевода
-        ix = transfer(
-            TransferParams(
-                from_pubkey=sender_keypair.pubkey(),  # Публичный ключ отправителя из ключевой пары отправителя
-                to_pubkey=recipient_pubkey,  # Публичный ключ получателя
-                lamports=lamports, ))  # Количество лампортов для перевода
-
-        # Создаем сообщение для транзакции, используя версию 0 (V0) сообщения.
-        # Это сообщение будет содержать следующие параметры:
-        # - Отправитель: публичный ключ отправителя из ключевой пары отправителя.
-        # - Инструкции: список инструкций, в данном случае, только одна инструкция перевода (ix).
-        # - Адреса учетных записей для поиска: пустой список, так как нет необходимости в дополнительных адресах.
-        # - Хэш блока: последний хэш блока, используемый в транзакции для обеспечения ее уникальности и подтверждения.
-        message = MessageV0.try_compile(sender_keypair.pubkey(), [ix], [], blockhash)
-
-        # Создаем транзакцию, используя сообщение и добавляя ключевую пару отправителя в качестве подписчика.
-        # Транзакция будет подписана ключевой парой отправителя перед отправкой в сеть.
-        tx = VersionedTransaction(message, [sender_keypair])
-
-        # Создаем объект опций транзакции, устанавливая параметр skip_confirmation в False,
-        # чтобы не пропускать подтверждение транзакции перед ее выполнением.
-        tx_opts = TxOpts(skip_confirmation=False)
-
-        # Отправляем подписанную транзакцию в сеть с использованием асинхронного клиента.
-        # Передаем транзакцию (tx) и опции транзакции (tx_opts) в метод send_transaction.
-        await client.send_transaction(tx, opts=tx_opts)
+            return True
+        else:
+            return False
 
     except ValueError as e:
-        # Логируем ошибку в случае неверных данных
         logger.error(f"Error during token transfer: {e}")
 
     except Exception as e:
-        # Логируем другие исключения
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error during token transfer: {e}\n{detailed_error_traceback}")
 
-#
+
+#############################################################
+
+# async def transfer_token(sender_address: str, sender_private_key: str, recipient_address: str, amount: float,
+#                          client: AsyncClient) -> None:
+#     try:
+#         # Проверяем валидность адреса отправителя
+#         if not is_valid_wallet_address(sender_address):
+#             raise ValueError("Неверный адрес отправителя")
+
+#         # Проверяем валидность адреса получателя
+#         if not is_valid_wallet_address(recipient_address):
+#             raise ValueError("Неверный адрес получателя")
+
+#         # Проверяем валидность приватного ключа отправителя
+#         if not is_valid_private_key(sender_private_key):
+#             raise ValueError("Неверный приватный ключ отправителя")
+
+#         # Создаем ключевую пару отправителя из приватного ключа
+#         sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
+
+#         # Получаем публичный ключ получателя из его адреса
+#         recipient_pubkey = Pubkey(bytes(recipient_address, 'utf-8'))
+
+#         # Преобразуем сумму перевода из SOL в лампорты
+#         lamports = int(amount * 10 ** 9)
+
+#         # Получаем последний хеш блока для использования в транзакции
+#         blockhash_bytes = bytes((await client.get_latest_blockhash()).value)
+#         blockhash = Hash(blockhash_bytes)
+
+#         # Создаем инструкцию перевода
+#         ix = transfer(
+#             TransferParams(
+#                 from_pubkey=sender_keypair.pubkey(),  # Публичный ключ отправителя из ключевой пары отправителя
+#                 to_pubkey=recipient_pubkey,  # Публичный ключ получателя
+#                 lamports=lamports, ))  # Количество лампортов для перевода
+
+#         # Создаем сообщение для транзакции, используя версию 0 (V0) сообщения.
+#         # Это сообщение будет содержать следующие параметры:
+#         # - Отправитель: публичный ключ отправителя из ключевой пары отправителя.
+#         # - Инструкции: список инструкций, в данном случае, только одна инструкция перевода (ix).
+#         # - Адреса учетных записей для поиска: пустой список, так как нет необходимости в дополнительных адресах.
+#         # - Хэш блока: последний хэш блока, используемый в транзакции для обеспечения ее уникальности и подтверждения.
+#         message = MessageV0.try_compile(sender_keypair.pubkey(), [ix], [], blockhash)
+
+#         # Создаем транзакцию, используя сообщение и добавляя ключевую пару отправителя в качестве подписчика.
+#         # Транзакция будет подписана ключевой парой отправителя перед отправкой в сеть.
+#         tx = VersionedTransaction(message, [sender_keypair])
+
+#         # Создаем объект опций транзакции, устанавливая параметр skip_confirmation в False,
+#         # чтобы не пропускать подтверждение транзакции перед ее выполнением.
+#         tx_opts = TxOpts(skip_confirmation=False)
+
+#         # Отправляем подписанную транзакцию в сеть с использованием асинхронного клиента.
+#         # Передаем транзакцию (tx) и опции транзакции (tx_opts) в метод send_transaction.
+#         await client.send_transaction(tx, opts=tx_opts)
+
+#     except ValueError as e:
+#         # Логируем ошибку в случае неверных данных
+#         logger.error(f"Error during token transfer: {e}")
+
+#     except Exception as e:
+#         # Логируем другие исключения
+#         detailed_error_traceback = traceback.format_exc()
+#         logger.error(f"Error during token transfer: {e}\n{detailed_error_traceback}")
+
+# ###############################################
 # async def get_token_price(token_mint_address):
 #     # Формирование URL для запроса цены токена к внешнему API - надо доработать
 #     api_url = f"https://api.example.com/token-prices/{token_mint_address}"
