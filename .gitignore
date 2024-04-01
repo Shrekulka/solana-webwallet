@@ -195,4 +195,5 @@ dist/
 # Windows binaries
 *.pyd
 
-.idea 
+.idea
+.venv/
