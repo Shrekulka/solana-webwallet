@@ -34,21 +34,24 @@ CREATE_WALLET_MESSAGE = {
 
 # Сообщения для 'connect_wallet'
 CONNECT_WALLET_MESSAGE = {
-    "connect_wallet_prompt": "🔗 Пожалуйста, введите адрес своего кошелька Solana.",
-    "connect_wallet": "🔗 Connect wallet",
-    "connect_wallet_address_prompt": "🔑 Введите адрес кошелька для подключения к боту",
-    "invalid_wallet_address": "❌ Некорректный адрес кошелька Solana",
-    "wallet_connected_successfully": "🎉 Кошелек с адресом {wallet_address}\nуспешно подключен к боту",
-    "invalid_private_key": "❌ Некорректный приватный ключ кошелька",
-    "connect_wallet_private_key_prompt": "🔑 Пожалуйста, введите корректный приватный ключ вашего кошелька Solana",
-    "this_wallet_already_exists": "Этот адрес кошелька уже был подключен ранее",
+    "connect_wallet_prompt": "<b>🔗 Please enter your Solana wallet address.</b>",
+    "connect_wallet": "<b>🔗 Connect wallet</b>",
+    "connect_wallet_address_prompt": "<b>🔑 Enter the wallet address to connect to the bot</b>",
+    "invalid_wallet_address": "<b>❌ Invalid Solana wallet address</b>",
+    "wallet_connected_successfully": "<b>🎉 Wallet with address {wallet_address}</b>\nsuccessfully connected to the bot",
+    "invalid_private_key": "<b>❌ Invalid wallet private key</b>",
+    "connect_wallet_private_key_prompt": "<b>🔑 Please enter the correct private key of your Solana wallet</b>",
+    "this_wallet_already_exists": "<i>This wallet address has already been connected before</i>",
 }
+
 
 # Сообщения для обработки команды balance
 BALANCE_MESSAGE = {
-    "no_registered_wallet": "У вас нет зарегистрированного кошелька. Создайте новый кошелек командой /create_wallet",
-    "balance_success": "Баланс вашего кошелька: {balance} SOL"
+    "no_registered_wallet": "<b>🛑 You don't have a registered wallet.</b>\n"
+                            "Create a new wallet with the command /create_wallet",
+    "balance_success": "<b>💰 Your wallet balance:</b> {balance} SOL"
 }
+
 
 # Сообщения для 'connect_wallet'
 TOKEN_PRICE_MESSAGE = {
@@ -71,24 +74,27 @@ TOKEN_SELL_MESSAGES = {
 
 # Сообщения для переноса
 TOKEN_TRANSFER_MESSAGE = {
-    "transfer_recipient_address_prompt": "Введите адрес кошелька получателя:",
-    "transfer_amount_prompt": "Введите количество токенов для передачи:",
-    "invalid_wallet_address": "Неверный адрес кошелька.",
-    "transfer_successful": "Перевод {amount} SOL на адрес {recipient} выполнен успешно.",
-    "transfer_not_successful": "Не удалось провести перевод {amount} SOL на адрес {recipient}.",
-    "insufficient_balance": "Недостаточно средств на вашем кошельке для данного перевода.",
-    "no_wallet_connected": "Пожалуйста, подключите кошелек перед переводом токенов.",
-    "list_sender_wallets": "Список Ваших кошельков:",
-    "choose_sender_wallet": "Введите адрес Вашего кошелька:",
-    "invalid_wallet_choice": "Неверный выбор кошелька.",
-    "no_wallets_connected": "У вас нет подключенных кошельков. Подключите кошелек перед переводом токенов.",
-    "save_new_wallet_prompt": "Сохранить адрес данного кошелька: ",
-    "wallet_info_template": "{number}) Имя кошелька: {name}\n"
-                            "Адрес кошелька: {address}\n"
-                            "Количество токенов: {balance} SOL\n",
-    "save_wallet": "Yes",
-    "cancel": "No"
+    "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n"
+                                         "Note: The recipient's minimum balance\n"
+                                         "should be at least 0.00089784 SOL",
+    "transfer_amount_prompt": "<b>💸 Enter the amount of tokens to transfer:</b>",
+    "invalid_wallet_address": "<b>❌ Invalid wallet address.</b>",
+    "transfer_successful": "<b>✅ Transfer of {amount} SOL to {recipient} successful.</b>",
+    "transfer_not_successful": "<b>❌ Failed to transfer {amount} SOL to {recipient}.</b>",
+    "insufficient_balance": "<b>❌ Insufficient funds in your wallet for this transfer.</b>",
+    "insufficient_balance_recipient": "<b>❌ The recipient's balance\nshould be at least 0.00089784 Sol.</b>",
+    "no_wallet_connected": "<b>🔗 Please connect your wallet before transferring tokens.</b>",
+    "list_sender_wallets": "<b>📋 Your wallet list:</b>",
+    "choose_sender_wallet": "<b>🔑 Enter your wallet address:</b>",
+    "invalid_wallet_choice": "<b>❌ Invalid wallet choice.</b>",
+    "no_wallets_connected": "<b>❌ You don't have any connected wallets.\n"
+                            "Connect a wallet before transferring tokens.</b>",
+    "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
+    "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
+    "save_wallet": "<i>Yes</i>",
+    "cancel": "<i>No</i>"
 }
+
 
 # Сообщения для обработки команды transactions
 TOKEN_TRANSACTION_MESSAGE = {

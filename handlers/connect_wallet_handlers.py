@@ -52,7 +52,7 @@ async def process_connect_wallet_address(message: Message, state: FSMContext) ->
                     if user_wallets:
                         if wallet_address in [w.wallet_address for w in user_wallets]:
                             await message.answer(
-                            LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
+                                LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
                             await message.answer(LEXICON["connect_wallet_address_prompt"])
                         else:
                             await state.update_data(wallet_address=wallet_address)
@@ -133,8 +133,8 @@ async def process_connect_wallet_private_key(message: Message, state: FSMContext
 
                         # Отправляем сообщение об успешном подключении кошелька и очищаем состояние
                         await message.answer(
-                        LEXICON["wallet_connected_successfully"].format(wallet_address=wallet.wallet_address),
-                        reply_markup=main_keyboard)
+                            LEXICON["wallet_connected_successfully"].format(wallet_address=wallet.wallet_address),
+                            reply_markup=main_keyboard)
             await state.clear()
         else:
             # Если адреса не совпадают, отправляем сообщение об ошибке и просим ввести приватный ключ заново

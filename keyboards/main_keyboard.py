@@ -4,46 +4,33 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from lexicon.lexicon_en import LEXICON
 
-# Создание объектов кнопок с текстом из словаря и соответствующими callback_data
-button_create_wallet = InlineKeyboardButton(text=LEXICON["create_wallet"],
-                                            callback_data="callback_button_create_wallet")
 
-button_connect_wallet = InlineKeyboardButton(text=LEXICON["connect_wallet"],
-                                             callback_data="callback_button_connect_wallet")
+# Функция для создания инлайн-кнопки
+def create_button(text, callback_data):
+    return InlineKeyboardButton(text=text, callback_data=callback_data)
 
-button_balance = InlineKeyboardButton(text=LEXICON["balance"], callback_data="callback_button_balance")
 
-button_price = InlineKeyboardButton(text=LEXICON["token_price"], callback_data="callback_button_price")
+# Функция для создания клавиатуры с кнопками
+def create_keyboard(data):
+    buttons = []                                          # Создание пустого списка для кнопок
+    for text, callback_data in data:                      # Итерация по данным для кнопок
+        button = create_button(text, callback_data)       # Создание инлайн-кнопки
+        buttons.append([button])                          # Добавление кнопки в список кнопок
+    return InlineKeyboardMarkup(inline_keyboard=buttons)  # Создание клавиатуры из списка кнопок
 
-button_buy = InlineKeyboardButton(text=LEXICON["token_buy"], callback_data="callback_button_buy")
 
-button_sell = InlineKeyboardButton(text=LEXICON["token_sell"], callback_data="callback_button_sell")
+# Создание данных для кнопок с использованием лексикона
+button_data = [
+    # Текст кнопки и данные обратного вызова для создания кошелька
+    (LEXICON["create_wallet"], "callback_button_create_wallet"),
+    # Текст кнопки и данные обратного вызова для подключения кошелька
+    (LEXICON["connect_wallet"], "callback_button_connect_wallet"),
+    # Текст кнопки и данные обратного вызова для проверки баланса
+    (LEXICON["balance"], "callback_button_balance"),
+    # Текст кнопки и данные обратного вызова для передачи токенов
+    (LEXICON["token_transfer"], "callback_button_transfer"),
+    # Текст кнопки и данные обратного вызова для просмотра транзакций
+    (LEXICON["transaction"], "callback_button_transaction"),]
 
-button_transfer = InlineKeyboardButton(text=LEXICON["token_transfer"], callback_data="callback_button_transfer")
-
-button_transactions = InlineKeyboardButton(text=LEXICON["transaction"], callback_data="callback_button_transaction")
-
-button_delete_wallet = InlineKeyboardButton(text=LEXICON["delete_wallet"],
-                                            callback_data="callback_button_delete_wallet")
-
-button_settings = InlineKeyboardButton(text=LEXICON["settings"], callback_data="callback_button_settings")
-
-button_donate = InlineKeyboardButton(text=LEXICON["donate"], callback_data="callback_button_donate")
-
-# Формирование списка списков кнопок, чтобы каждая кнопка была в отдельном списке
-main_buttons = [
-    [button_create_wallet],
-    [button_connect_wallet],
-    [button_balance],
-    # [button_price],
-    # [button_buy],
-    # [button_sell],
-    [button_transfer],
-    [button_transactions],
-    # [button_delete_wallet],
-    # [button_settings],
-    # [button_donate],
-]
-
-# Создание клавиатуры инлайн-кнопок с указанием списка кнопок
-main_keyboard = InlineKeyboardMarkup(inline_keyboard=main_buttons)
+# Создание основной клавиатуры с кнопками на основе созданных данных
+main_keyboard = create_keyboard(button_data)

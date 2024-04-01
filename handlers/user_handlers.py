@@ -11,6 +11,7 @@ from sqlalchemy import select
 from database.database import get_db
 from external_services.solana.solana import get_sol_balance, http_client
 from keyboards.main_keyboard import main_keyboard
+from keyboards.transfer_keyboards import get_wallet_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import User, SolanaWallet
@@ -131,75 +132,95 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
 
 @user_router.callback_query(F.data == "callback_button_transfer", StateFilter(default_state))
 async def process_transfer_token_command(callback: CallbackQuery, state: FSMContext) -> None:
-    try:
-        logger.info(callback.model_dump_json(indent=4, exclude_none=True))
+    """
+        Handles the command for transferring tokens.
 
+        Args:
+            callback (CallbackQuery): CallbackQuery object containing information about the call.
+            state (FSMContext): FSMContext object for working with chat states.
+
+        Returns:
+            None
+    """
+    try:
+        # Устанавливаем соединение с базой данных
         async with await get_db() as session:
+            # Получаем пользователя по его telegram_id
             user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
             user = user.scalar()
 
+            # Если пользователь найден
             if user:
+                # Получаем кошельки пользователя
                 user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
                 user_wallets = user_wallets.scalars().all()
+                user_wallets = list(user_wallets)
 
-        await callback.message.edit_text(LEXICON['list_sender_wallets'])
+        # Получаем клавиатуру с кнопками для выбора кошелька
+        wallet_keyboard = await get_wallet_keyboard(user_wallets)
 
-        if user_wallets:
+        # Редактируем сообщение с клавиатурой кошельков
+        await callback.message.edit_text(LEXICON["list_sender_wallets"], reply_markup=wallet_keyboard)
 
-            for i, wallet in enumerate(user_wallets):
-                balance = await get_sol_balance(wallet.wallet_address, http_client)
-
-                message_text = LEXICON['wallet_info_template'].format(
-                    number=i+1,
-                    name=wallet.name,
-                    address=wallet.wallet_address,
-                    balance=balance
-                )
-
-                await callback.message.answer(message_text)
-
-            await callback.message.answer(LEXICON['choose_sender_wallet'])
-            await state.set_state(FSMWallet.choose_sender_wallet)
-
-        else:
-            await callback.message.edit_text(LEXICON["no_wallets_connected"])
+        # Устанавливаем состояние FSM для выбора отправителя
+        await state.set_state(FSMWallet.choose_sender_wallet)
 
     except Exception as e:
-        detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_send_message_error}")
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_error_traceback}")
 
 
 ###########################################
 @user_router.callback_query(F.data == "callback_button_balance", StateFilter(default_state))
 async def process_balance_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Handles the command to retrieve the wallet balance.
+
+        Args:
+            callback (CallbackQuery): CallbackQuery object containing information about the call.
+            state (FSMContext): FSMContext object for working with chat states.
+
+        Returns:
+            None
+    """
     try:
+        # Устанавливаем соединение с базой данных
         async with await get_db() as session:
+            # Получаем пользователя по его telegram_id
             user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
             user = user.scalar()
 
+            # Получаем кошельки пользователя
             user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
             user_wallets = user_wallets.scalars().all()
 
+        # Если у пользователя есть кошельки
         if user_wallets:
+            # Редактируем сообщение с информацией о кошельках
             await callback.message.edit_text(LEXICON['list_sender_wallets'])
 
+            # Отправляем информацию о каждом кошельке
             for i, wallet in enumerate(user_wallets):
+                # Получаем баланс кошелька
                 balance = await get_sol_balance(wallet.wallet_address, http_client)
+                # Форматируем текст сообщения с информацией о кошельке
                 message_text = LEXICON['wallet_info_template'].format(
-                    number=i+1,
+                    number=i + 1,
                     name=wallet.name,
                     address=wallet.wallet_address,
                     balance=balance
                 )
+                # Отправляем сообщение с информацией о кошельке
                 await callback.message.answer(message_text)
 
+        # Если у пользователя нет кошельков
         else:
+            # Отправляем ответ с информацией о том, что у пользователя нет зарегистрированных кошельков
             await callback.answer(LEXICON["no_registered_wallet"])
 
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_balance_command: {e}\n{detailed_send_message_error}")
-
 
 ###########################################
 # # Объявление обработчика колбэка для кнопки "callback_button_transfer".
@@ -229,7 +250,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
 #                 # Обработка ошибки при некорректном формате ввода от пользователя.
 #                 await callback.answer(LEXICON["send_invalid_format"])
 #         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             # Если кошелек пользователя не найден, отправляем сообщение о том, что кошелек не зарегистрирован.
 #             await callback.answer(LEXICON["no_registered_wallet"])
 
 # @user_router.callback_query(F.data == "callback_button_balance")
@@ -256,7 +277,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
 #             # Отправляем ответ пользователю с сообщением об успешном получении баланса.
 #             await callback.answer(LEXICON["balance_success"].format(balance=balance))
 #         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             # Если кошелек пользователя не найден, отправляем сообщение о том, что кошелек не зарегистрирован.
 #             await callback.answer(LEXICON["no_registered_wallet"])
 #     finally:
 #         db.close()
@@ -304,7 +325,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
 #                 # Обработка ошибки при некорректном формате ввода от пользователя.
 #                 await callback.answer(LEXICON["send_invalid_format"])
 #         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             # Если кошелек пользователя не найден, отправляем сообщение о том, что кошелек не зарегистрирован.
 #             await callback.answer(LEXICON["no_registered_wallet"])
 #     finally:
 #         db.close()
@@ -337,7 +358,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
 #                 # Обработка ошибки при некорректном формате ввода от пользователя.
 #                 await callback.answer(LEXICON["send_invalid_format"])
 #         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             # Если кошелек пользователя не найден, отправляем сообщение о том, что кошелек не зарегистрирован.
 #             await callback.answer(LEXICON["no_registered_wallet"])
 #
 #
@@ -381,7 +402,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
 #                 # Если история транзакций пуста, отправляем ответ с сообщением о пустой истории транзакций.
 #                 await callback.answer(LEXICON["empty_history"])
 #         else:
-#             # Если кошелек пользователя не найден, отправляем ответ с сообщением о том, что кошелек не зарегистрирован.
+#             # Если кошелек пользователя не найден, отправляем сообщение о том, что кошелек не зарегистрирован.
 #             await callback.answer(LEXICON["no_registered_wallet"])
 #
 #

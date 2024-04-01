@@ -1,17 +1,14 @@
 # solana_wallet_telegram_bot/external_services/solana/solana.py
+
 import traceback
 from typing import Tuple
 
 from solana.rpc.api import Client
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
-from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
-from solders.hash import Hash
-from solders.message import MessageV0
 from solders.pubkey import Pubkey
 from solders.system_program import transfer, TransferParams
-from solders.transaction import VersionedTransaction
 
 from logger_config import logger
 
@@ -146,45 +143,55 @@ async def get_sol_balance(wallet_address, client):
 
 
 async def transfer_token(sender_address: str, sender_private_key: str, recipient_address: str, amount: float,
-                         client: AsyncClient) -> None:
-    try:
-        if not is_valid_wallet_address(sender_address):
-            raise ValueError("Неверный адрес отправителя")
+                         client: AsyncClient) -> bool:
+    """
+        Asynchronous function to transfer tokens between wallets.
 
-        if not is_valid_wallet_address(recipient_address):
-            raise ValueError("Неверный адрес получателя")
+        Args:
+            sender_address (str): Sender's address.
+            sender_private_key (str): Sender's private key.
+            recipient_address (str): Recipient's address.
+            amount (float): Amount of tokens to transfer.
+            client (AsyncClient): Asynchronous client for sending the transaction.
 
-        if not is_valid_private_key(sender_private_key):
-            raise ValueError("Неверный приватный ключ отправителя")
+        Raises:
+            ValueError: If any of the provided addresses is invalid or the private key is invalid.
 
-        if is_valid_wallet_address and is_valid_wallet_address and is_valid_private_key:
-            sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
+        Returns:
+            bool: True if the transfer is successful, False otherwise.
+    """
+    # Проверяем, является ли адрес отправителя действительным
+    if not is_valid_wallet_address(sender_address):
+        raise ValueError("Invalid sender address")
 
-            txn = Transaction().add(
-                transfer(
-                    TransferParams(
-                        from_pubkey=sender_keypair.pubkey(),
-                        to_pubkey=Pubkey.from_string(recipient_address),
-                        # Количество лампортов для перевода, преобразованное из суммы SOL.
-                        lamports=int(amount * 10 ** 9),
-                    )
-                )
+    # Проверяем, является ли адрес получателя действительным
+    if not is_valid_wallet_address(recipient_address):
+        raise ValueError("Invalid recipient address")
+
+    # Проверяем, является ли приватный ключ отправителя действительным
+    if not is_valid_private_key(sender_private_key):
+        raise ValueError("Invalid sender private key")
+
+    # Создаем пару ключей отправителя из приватного ключа
+    sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
+
+    # Создаем транзакцию для перевода токенов
+    txn = Transaction().add(
+        transfer(
+            TransferParams(
+                from_pubkey=sender_keypair.pubkey(),
+                to_pubkey=Pubkey.from_string(recipient_address),
+                # Количество лампортов для перевода, преобразованное из суммы SOL.
+                lamports=int(amount * 10 ** 9),
             )
-
-            response = client.send_transaction(txn, sender_keypair)
-            client.confirm_transaction(response.value)
-
-            return True
-        else:
-            return False
-
-    except ValueError as e:
-        logger.error(f"Error during token transfer: {e}")
-
-    except Exception as e:
-        detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Error during token transfer: {e}\n{detailed_error_traceback}")
-
+        )
+    )
+    # Отправляем транзакцию клиенту
+    response = await client.send_transaction(txn, sender_keypair)
+    # Подтверждаем транзакцию
+    await client.confirm_transaction(response.value)
+    # Возвращаем True, если перевод выполнен успешно
+    return True
 
 #############################################################
 
