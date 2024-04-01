@@ -5,12 +5,13 @@ from aiogram import Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from sqlalchemy import select
 
 from database.database import get_db
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import SolanaWallet
+from models.models import SolanaWallet, User
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 
@@ -96,17 +97,20 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         wallet_address = data.get("wallet_address")
         # Создаем соединение с базой данных
         async with await get_db() as session:
+            user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
+            user = user.scalar()
+
             # Если wallet_address есть в данных состояния, обновляем существующий кошелек
             if wallet_address:
-                wallet = await SolanaWallet.update_wallet(session, message.from_user.id, wallet_address, name=name,
+                wallet = await SolanaWallet.update_wallet(session, user.id, wallet_address, name=name,
                                                           description=description)
                 if wallet is None:  # Если кошелек не найден, создаем новый
-                    wallet = await SolanaWallet.wallet_create(session, message.from_user.id, name=name,
+                    wallet = await SolanaWallet.wallet_create(session, user.id, name=name,
                                                               description=description)
                     await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
             # Иначе создаем новый кошелек
             else:
-                wallet = await SolanaWallet.wallet_create(session, message.from_user.id, name=name,
+                wallet = await SolanaWallet.wallet_create(session, user.id, name=name,
                                                           description=description)
                 await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
 
