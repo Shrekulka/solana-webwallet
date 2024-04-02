@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from database.database import get_db
-from external_services.solana.solana import is_valid_wallet_address, get_sol_balance, http_client, transfer_token
+from external_services.solana.solana import is_valid_wallet_address, is_valid_amount, get_sol_balance, http_client, transfer_token
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
@@ -109,12 +109,10 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
     """
     try:
         # Преобразуем текст сообщения, содержащий сумму перевода, в число с плавающей точкой.
-        # Проверяем что число
-        try:
-            amount = float(message.text)
-        except ValueError:
+        if not is_valid_amount(message.text):
             raise ValueError
 
+        amount = float(message.text)
         # Получаем данные из состояния чата.
         data = await state.get_data()
         # Извлекаем адрес отправителя из данных состояния.

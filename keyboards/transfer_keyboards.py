@@ -20,16 +20,15 @@ async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboar
     """
     # Создаем список кнопок для каждого кошелька
     wallet_buttons = []  # Пустой список кнопок
-    count = 1  # Инициализация счетчика
 
     # Итерация по кошелькам пользователя
-    for wallet in user_wallets:
+    for i, wallet in enumerate(user_wallets):
         # Получаем баланс солана для каждого кошелька
         balance = await get_sol_balance(wallet.wallet_address, http_client)
 
         # Форматируем информацию о кошельке с использованием шаблона из лексикона
         wallet_info = LEXICON["wallet_info_template"].format(
-            number=count,
+            number=i + 1,
             name=wallet.name,
             address=wallet.wallet_address,
             balance=balance
@@ -48,8 +47,6 @@ async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboar
         )
         # Добавляем кнопку в список кнопок
         wallet_buttons.append([wallet_button])
-        # Увеличиваем счетчик
-        count += 1
 
     # Создаем клавиатуру из кнопок
     wallet_keyboard = InlineKeyboardMarkup(inline_keyboard=wallet_buttons)

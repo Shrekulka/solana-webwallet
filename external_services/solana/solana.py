@@ -9,6 +9,7 @@ from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
 from solders.pubkey import Pubkey
 from solders.system_program import transfer, TransferParams
+from solders.transaction_status import TransactionConfirmationStatus
 
 from logger_config import logger
 
@@ -128,10 +129,16 @@ def is_valid_private_key(private_key: str) -> bool:
         return False
 
 
-########################################################################################################################
+def is_valid_amount(amount: str) -> bool:
+    try:
+        float(amount)
+        return True
+    except ValueError:
+        return False
+
+
 async def get_sol_balance(wallet_address, client):
     try:
-        # balance = client.get_balance(Pubkey.from_string(wallet_address)).value
         balance = (await client.get_balance(Pubkey.from_string(wallet_address))).value
         # Преобразование лампортов в SOL
         sol_balance = balance / 10 ** 9
@@ -189,13 +196,18 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
         )
     )
     # Отправляем транзакцию клиенту
-    response = await client.send_transaction(txn, sender_keypair)
+    send_transaction_response = await client.send_transaction(txn, sender_keypair)
     # Подтверждаем транзакцию
-    res = await client.confirm_transaction(response.value)
-    print('res: ', res, type(res))
-    print('res: ', dir(res))
-    # Возвращаем True, если перевод выполнен успешно
-    return True
+    confirm_transaction_response = await client.confirm_transaction(send_transaction_response.value)
+
+    if hasattr(confirm_transaction_response, 'value') and confirm_transaction_response.value[0]:
+        if hasattr(confirm_transaction_response.value[0], 'confirmation_status'):
+            confirmation_status = confirm_transaction_response.value[0].confirmation_status
+            if confirmation_status:
+                logger.debug(f"Transaction confirmation_status: {confirmation_status}")
+                if confirmation_status in [TransactionConfirmationStatus.Confirmed, TransactionConfirmationStatus.Finalized]:
+                    return True
+    return False
 
 #############################################################
 
