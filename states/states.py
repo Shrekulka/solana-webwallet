@@ -29,3 +29,4 @@ class FSMWallet(StatesGroup):
     confirm_save_new_wallet = State ()
     transfer_recipient_address = State()  # Состояние ввода адреса кошелька получателя
     transfer_amount = State()             # Состояние ввода количества токенов для передачи
+    choose_transaction_wallet = State()   # Состояние выбора кошелька для транзакций

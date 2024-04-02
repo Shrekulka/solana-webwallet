@@ -99,6 +99,8 @@ TOKEN_TRANSFER_MESSAGE = {
 
 # Сообщения для обработки команды transactions
 TOKEN_TRANSACTION_MESSAGE = {
+    "list_wallets": "<b>📋 Your wallet list:</b>",
+    "wallet_transaction_info_template": "{number}) 💼 {name} 📍 {address}",
     "empty_history": "История транзакций пуста",
     "transaction_info": "Транзакция {transaction_id}:\n"
                         "Отправитель: {sender}\n"

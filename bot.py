@@ -9,7 +9,13 @@ from aiogram.fsm.storage.redis import RedisStorage, Redis
 
 from config_data.config import config
 from database.database import init_database
-from handlers import user_handlers, create_wallet_handlers, connect_wallet_handlers, transfer_handlers
+from handlers import (
+    user_handlers,
+    create_wallet_handlers,
+    connect_wallet_handlers,
+    transfer_handlers,
+    transaction_handlers,
+)
 from logger_config import logger
 
 
@@ -45,7 +51,7 @@ async def main() -> None:
     dp.include_router(create_wallet_handlers.create_wallet_router)
     dp.include_router(connect_wallet_handlers.connect_wallet_router)
     dp.include_router(transfer_handlers.transfer_router)
-
+    dp.include_router(transaction_handlers.transaction_router)
     # Проверяем наличие базы данных и инициализируем ее при необходимости
     await init_database()
 

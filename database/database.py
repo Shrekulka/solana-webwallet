@@ -2,8 +2,7 @@
 
 import aiosqlite
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from config_data.config import config
 
@@ -60,7 +59,3 @@ async def init_database() -> None:
         async with session.begin():
             await create_database()
             # код для создания таблиц и других необходимых действий для инициализации базы данных
-
-
-class Base(AsyncAttrs, DeclarativeBase):
-    pass

@@ -4,12 +4,16 @@ from typing import Optional
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, select
 from sqlalchemy import DateTime, func
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
-from database.database import Base
 from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address, \
     get_wallet_address_from_private_key
 from logger_config import logger
+
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
 
 
 class SolanaWallet(Base):

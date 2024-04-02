@@ -9,9 +9,10 @@ from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
 from database.database import get_db
-from external_services.solana.solana import get_sol_balance, http_client
+from external_services.solana.solana import get_sol_balance, get_transaction_history, http_client
 from keyboards.main_keyboard import main_keyboard
 from keyboards.transfer_keyboards import get_wallet_keyboard
+from keyboards.transaction_keyboards import get_transaction_wallet_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import User, SolanaWallet
@@ -170,7 +171,6 @@ async def process_transfer_token_command(callback: CallbackQuery, state: FSMCont
         logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_error_traceback}")
 
 
-###########################################
 @user_router.callback_query(F.data == "callback_button_balance", StateFilter(default_state))
 async def process_balance_command(callback: CallbackQuery, state: FSMContext) -> None:
     """
@@ -184,6 +184,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
             None
     """
     try:
+        print('process_balance_command')
         # Устанавливаем соединение с базой данных
         async with await get_db() as session:
             # Получаем пользователя по его telegram_id
@@ -221,6 +222,128 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_balance_command: {e}\n{detailed_send_message_error}")
+
+
+############################################
+
+
+@user_router.callback_query(F.data == "callback_button_transaction", StateFilter(default_state))
+async def process_transactions_command(callback: CallbackQuery, state: FSMContext) -> None:
+    try:
+        # Устанавливаем соединение с базой данных
+        async with await get_db() as session:
+            # Получаем пользователя по его telegram_id
+            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
+            user = user.scalar()
+
+            # Если пользователь найден
+            if user:
+                # Получаем кошельки пользователя
+                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
+                user_wallets = user_wallets.scalars().all()
+                user_wallets = list(user_wallets)
+
+                if user_wallets:
+                    # Получаем клавиатуру с кнопками для выбора кошелька
+                    wallet_keyboard = await get_transaction_wallet_keyboard(user_wallets)
+
+                    # Редактируем сообщение с клавиатурой кошельков
+                    await callback.message.edit_text(LEXICON["list_wallets"], reply_markup=wallet_keyboard)
+
+                    # Устанавливаем состояние FSM для выбора отправителя
+                    await state.set_state(FSMWallet.choose_transaction_wallet)
+
+                else:
+                    await callback.answer(LEXICON["no_registered_wallet"])
+
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in process_transactions_command: {e}\n{detailed_error_traceback}")
+
+
+
+# @user_router.callback_query(F.data == "callback_button_transaction")
+# async def process_transactions_command(callback: CallbackQuery) -> None:
+
+#     async with await get_db() as session:
+#         user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
+#         user = user.scalar()
+
+#         if user:
+#             result = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
+
+#             ### test
+#             if result:
+#                 for i, res in enumerate(result.scalars()):
+#                     if i == 1:
+#                         user_wallet = res
+#             ### test
+
+#             # user_wallet = result.scalars().first()
+#             if user_wallet:
+#                 transaction_history = await get_transaction_history(user_wallet.wallet_address, http_client)
+
+#                 if transaction_history:
+
+#                     for i, tr in enumerate(transaction_history):
+#                         print(f'*** {i}. transaction: {tr}\n')
+
+#                     # Если история транзакций существует, формируем сообщение с информацией о транзакциях.
+#                     # for async client
+#                     transaction_messages = [
+#                         # Форматирование каждого сообщения о транзакции с помощью LEXICON и данных из истории транзакций.
+#                         LEXICON["transaction_info"].format(
+#                             # Идентификатор транзакции, обрезанный до первых 8 символов для краткости.
+#                             transaction_id='{}...{}'.format(
+#                                 str(transaction.transaction.transaction.signatures[0])[:4],
+#                                 str(transaction.transaction.transaction.signatures[0])[-4:],
+#                             ),
+#                             # Отправитель транзакции - первый аккаунт в списке аккаунтов сообщения.
+#                             sender='{}...{}'.format(
+#                                 str(transaction.transaction.transaction.message.account_keys[0])[:4],
+#                                 str(transaction.transaction.transaction.message.account_keys[0])[-4:],
+#                             ),
+#                             # Получатель транзакции - второй аккаунт в списке аккаунтов сообщения.
+#                             recipient='{}...{}'.format(
+#                                 str(transaction.transaction.transaction.message.account_keys[1])[:4],
+#                                 str(transaction.transaction.transaction.message.account_keys[1])[-4:],
+#                             ),
+#                             # Разница в балансе отправителя до и после транзакции, выраженная в SOL.
+#                             amount=transaction.transaction.meta.pre_balances[0] - transaction.transaction.meta.post_balances[0]
+#                         )
+#                         # Итерация по каждой транзакции в истории транзакций.
+#                         for transaction in transaction_history
+#                     ]
+
+#                     for i, tr_mes in enumerate(transaction_messages):
+#                         print(f'{i}. transaction_messages: {tr_mes}\n\n')
+
+#                     # transaction_messages = [
+#                     #     # Форматирование каждого сообщения о транзакции с помощью LEXICON и данных из истории транзакций.
+#                     #     LEXICON["transaction_info"].format(
+#                     #         # Идентификатор транзакции, обрезанный до первых 8 символов для краткости.
+#                     #         transaction_id=str(transaction.value.transaction.transaction.signatures[0])[:8],
+#                     #         # Отправитель транзакции - первый аккаунт в списке аккаунтов сообщения.
+#                     #         sender=str(transaction.value.transaction.transaction.message.account_keys[0])[:8],
+#                     #         # Получатель транзакции - второй аккаунт в списке аккаунтов сообщения.
+#                     #         recipient=str(transaction.value.transaction.transaction.message.account_keys[1])[:8],
+#                     #         # Разница в балансе отправителя до и после транзакции, выраженная в SOL.
+#                     #         amount=transaction.value.transaction.meta.pre_balances[0] - transaction.value.transaction.meta.post_balances[0]
+#                     #     )
+#                     #     # Итерация по каждой транзакции в истории транзакций.
+#                     #     for transaction in transaction_history
+#                     # ]
+#                     # Отправляем пользователю сообщение с информацией о транзакциях.
+#                     # TODO ERROR: aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
+#                     # await callback.answer("\n\n".join(transaction_messages))
+#                     await callback.answer(transaction_messages[0])
+#                 else:
+#                     await callback.answer(LEXICON["empty_history"])
+#             else:
+#                 await callback.answer(LEXICON["no_registered_wallet"])
+
+
+
 
 ###########################################
 # # Объявление обработчика колбэка для кнопки "callback_button_transfer".

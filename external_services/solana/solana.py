@@ -129,7 +129,7 @@ def is_valid_private_key(private_key: str) -> bool:
         return False
 
 
-def is_valid_amount(amount: str) -> bool:
+def is_valid_amount(amount: str | int) -> bool:
     try:
         float(amount)
         return True
@@ -181,6 +181,9 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
     if not is_valid_private_key(sender_private_key):
         raise ValueError("Invalid sender private key")
 
+    if not is_valid_amount(amount):
+        raise ValueError("Invalid amount")
+
     # Создаем пару ключей отправителя из приватного ключа
     sender_keypair = Keypair.from_seed(bytes.fromhex(sender_private_key))
 
@@ -208,6 +211,45 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
                 if confirmation_status in [TransactionConfirmationStatus.Confirmed, TransactionConfirmationStatus.Finalized]:
                     return True
     return False
+
+
+######################################
+
+# TODO: часто ломается
+async def get_transaction_history(wallet_address, client):
+    try:
+        #### test: с этой нодой меньше ошибок
+        # client = Client('https://api.testnet.solana.com')
+        client = AsyncClient('https://api.testnet.solana.com')
+        #### test
+
+        # Получение истории транзакций кошелька
+        # signature_statuses = client.get_signatures_for_address(Pubkey.from_string(wallet_address))
+        # signature_statuses = (await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
+        signature_statuses = (await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
+        transaction_history = []
+
+        # Проходим по всем статусам подписей в результате
+        # for signature_status in signature_statuses.value:
+        for signature_status in signature_statuses:
+            print('signature_status: ', signature_status)
+            # Получаем транзакцию по подписи
+            # transaction = client.get_transaction(signature_status.signature)
+            transaction = (await client.get_transaction(signature_status.signature)).value
+            # Добавляем полученную транзакцию в историю транзакций
+            transaction_history.append(transaction)
+
+        # # Возвращаем список истории транзакций
+        return transaction_history
+
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        # Логирование ошибки
+        logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+        # Дополнительная обработка ошибки, если необходимо
+        raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+
+
 
 #############################################################
 
