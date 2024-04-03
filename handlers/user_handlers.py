@@ -9,13 +9,11 @@ from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
 from database.database import get_db
-from external_services.solana.solana import get_sol_balance, get_transaction_history, http_client
 from keyboards.main_keyboard import main_keyboard
-from keyboards.transfer_keyboards import get_wallet_keyboard
-from keyboards.transaction_keyboards import get_transaction_wallet_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import User, SolanaWallet
+from models.models import User
+from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
 
 # Инициализируем роутер уровня модуля
@@ -76,11 +74,29 @@ async def process_help_command(message: Message, state: FSMContext) -> None:
 
         # Отправляем сообщение со справочной информацией о командах из лексикона
         await message.answer(LEXICON["/help"])
-        # Отправляем дополнительное сообщение для продолжения с выбором пунктов меню
-        await message.answer(LEXICON["start_message_continue"], reply_markup=main_keyboard)
+
+        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_command: {e}\n{detailed_send_message_error}")
+
+
+@user_router.message(~CommandStart(), ~Command(commands='help'), StateFilter(default_state))
+async def process_unexpected_input(message: Message) -> None:
+    """
+        Handler for unexpected messages in the default_state.
+
+        Args:
+            message (Message): Incoming message.
+
+        Returns:
+            None
+    """
+    try:
+        await message.edit_text(LEXICON["unexpected_input"])
+    except Exception as error:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_unexpected_input: {error}\n{detailed_send_message_error}")
 
 
 @user_router.callback_query(F.data == "callback_button_create_wallet", StateFilter(default_state))
@@ -100,10 +116,11 @@ async def process_create_wallet_command(callback: CallbackQuery, state: FSMConte
         await callback.message.edit_text(LEXICON["wallet_name_prompt"])
         # Переход в состояние добавления имени кошелька
         await state.set_state(FSMWallet.add_name_wallet)
-
-    except Exception as e:
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
         detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_create_wallet_command: {e}\n{detailed_send_message_error}")
+        logger.error(f"Error in process_create_wallet_command: {error}\n{detailed_send_message_error}")
 
 
 @user_router.callback_query(F.data == "callback_button_connect_wallet", StateFilter(default_state))
@@ -126,9 +143,11 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
         await callback.message.edit_text(LEXICON["connect_wallet_prompt"])
         # Переход в состояние добавления
         await state.set_state(FSMWallet.connect_wallet_address)
-    except Exception as e:
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
         detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_connect_wallet_command: {e}\n{detailed_send_message_error}")
+        logger.error(f"Error in process_connect_wallet_command: {error}\n{detailed_send_message_error}")
 
 
 @user_router.callback_query(F.data == "callback_button_transfer", StateFilter(default_state))
@@ -143,38 +162,28 @@ async def process_transfer_token_command(callback: CallbackQuery, state: FSMCont
         Returns:
             None
     """
-    try:
-        # Устанавливаем соединение с базой данных
-        async with await get_db() as session:
-            # Получаем пользователя по его telegram_id
-            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
-            user = user.scalar()
-
-            # Если пользователь найден
-            if user:
-                # Получаем кошельки пользователя
-                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
-                user_wallets = user_wallets.scalars().all()
-                user_wallets = list(user_wallets)
-
-        # Получаем клавиатуру с кнопками для выбора кошелька
-        wallet_keyboard = await get_wallet_keyboard(user_wallets)
-
-        # Редактируем сообщение с клавиатурой кошельков
-        await callback.message.edit_text(LEXICON["list_sender_wallets"], reply_markup=wallet_keyboard)
-
-        # Устанавливаем состояние FSM для выбора отправителя
-        await state.set_state(FSMWallet.choose_sender_wallet)
-
-    except Exception as e:
-        detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Error in process_transfer_token_command: {e}\n{detailed_error_traceback}")
+    await process_wallets_command(callback, state, "transfer")
 
 
 @user_router.callback_query(F.data == "callback_button_balance", StateFilter(default_state))
 async def process_balance_command(callback: CallbackQuery, state: FSMContext) -> None:
     """
-        Handles the command to retrieve the wallet balance.
+    Обрабатывает команду для получения баланса кошелька.
+
+    Args:
+        callback (CallbackQuery): Объект CallbackQuery, содержащий информацию о вызове.
+        state (FSMContext): Объект FSMContext для работы с состояниями чата.
+
+    Returns:
+        None
+    """
+    await process_wallets_command(callback, state, "balance")
+
+
+@user_router.callback_query(F.data == "callback_button_transaction", StateFilter(default_state))
+async def process_transactions_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Handles the command for viewing transactions.
 
         Args:
             callback (CallbackQuery): CallbackQuery object containing information about the call.
@@ -183,84 +192,7 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
         Returns:
             None
     """
-    try:
-        print('process_balance_command')
-        # Устанавливаем соединение с базой данных
-        async with await get_db() as session:
-            # Получаем пользователя по его telegram_id
-            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
-            user = user.scalar()
-
-            # Получаем кошельки пользователя
-            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
-            user_wallets = user_wallets.scalars().all()
-
-        # Если у пользователя есть кошельки
-        if user_wallets:
-            # Редактируем сообщение с информацией о кошельках
-            await callback.message.edit_text(LEXICON['list_sender_wallets'])
-
-            # Отправляем информацию о каждом кошельке
-            for i, wallet in enumerate(user_wallets):
-                # Получаем баланс кошелька
-                balance = await get_sol_balance(wallet.wallet_address, http_client)
-                # Форматируем текст сообщения с информацией о кошельке
-                message_text = LEXICON['wallet_info_template'].format(
-                    number=i + 1,
-                    name=wallet.name,
-                    address=wallet.wallet_address,
-                    balance=balance
-                )
-                # Отправляем сообщение с информацией о кошельке
-                await callback.message.answer(message_text)
-
-        # Если у пользователя нет кошельков
-        else:
-            # Отправляем ответ с информацией о том, что у пользователя нет зарегистрированных кошельков
-            await callback.answer(LEXICON["no_registered_wallet"])
-
-    except Exception as e:
-        detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_balance_command: {e}\n{detailed_send_message_error}")
-
-
-############################################
-
-
-@user_router.callback_query(F.data == "callback_button_transaction", StateFilter(default_state))
-async def process_transactions_command(callback: CallbackQuery, state: FSMContext) -> None:
-    try:
-        # Устанавливаем соединение с базой данных
-        async with await get_db() as session:
-            # Получаем пользователя по его telegram_id
-            user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
-            user = user.scalar()
-
-            # Если пользователь найден
-            if user:
-                # Получаем кошельки пользователя
-                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
-                user_wallets = user_wallets.scalars().all()
-                user_wallets = list(user_wallets)
-
-                if user_wallets:
-                    # Получаем клавиатуру с кнопками для выбора кошелька
-                    wallet_keyboard = await get_transaction_wallet_keyboard(user_wallets)
-
-                    # Редактируем сообщение с клавиатурой кошельков
-                    await callback.message.edit_text(LEXICON["list_wallets"], reply_markup=wallet_keyboard)
-
-                    # Устанавливаем состояние FSM для выбора отправителя
-                    await state.set_state(FSMWallet.choose_transaction_wallet)
-
-                else:
-                    await callback.answer(LEXICON["no_registered_wallet"])
-
-    except Exception as e:
-        detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Error in process_transactions_command: {e}\n{detailed_error_traceback}")
-
-
+    await process_wallets_command(callback, state, "transactions")
 
 # @user_router.callback_query(F.data == "callback_button_transaction")
 # async def process_transactions_command(callback: CallbackQuery) -> None:
@@ -291,7 +223,7 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
 #                     # Если история транзакций существует, формируем сообщение с информацией о транзакциях.
 #                     # for async client
 #                     transaction_messages = [
-#                         # Форматирование каждого сообщения о транзакции с помощью LEXICON и данных из истории транзакций.
+#                         # Форматирование каждого сообщения о транзакции и данных из истории транзакций.
 #                         LEXICON["transaction_info"].format(
 #                             # Идентификатор транзакции, обрезанный до первых 8 символов для краткости.
 #                             transaction_id='{}...{}'.format(
@@ -319,7 +251,7 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
 #                         print(f'{i}. transaction_messages: {tr_mes}\n\n')
 
 #                     # transaction_messages = [
-#                     #     # Форматирование каждого сообщения о транзакции с помощью LEXICON и данных из истории транзакций.
+#                     #     # Форматирование каждого сообщения о транзакции и данных из истории транзакций.
 #                     #     LEXICON["transaction_info"].format(
 #                     #         # Идентификатор транзакции, обрезанный до первых 8 символов для краткости.
 #                     #         transaction_id=str(transaction.value.transaction.transaction.signatures[0])[:8],
@@ -341,8 +273,6 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
 #                     await callback.answer(LEXICON["empty_history"])
 #             else:
 #                 await callback.answer(LEXICON["no_registered_wallet"])
-
-
 
 
 ###########################################

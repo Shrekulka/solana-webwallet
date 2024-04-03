@@ -13,6 +13,12 @@ GENERAL_MESSAGE = {
     "delete_wallet": "🗑️ Delete wallet",
     "settings": "⚙️ Crypto wallet settings",
     "donate": "💝 Donate to the team",
+    "unexpected_input": "❌ <b>Unexpected input</b>\n\n"
+                        "Please select an action from the menu\n"
+                        "or enter one of the available commands,\n"
+                        "such as /start or /help.",
+    "back_to_main_menu": "<b>🏠 Main menu</b>\n\n"
+                         "To view the list of available commands, type /help 😊",
 }
 
 CREATE_WALLET_MESSAGE = {
@@ -35,23 +41,20 @@ CREATE_WALLET_MESSAGE = {
 # Сообщения для 'connect_wallet'
 CONNECT_WALLET_MESSAGE = {
     "connect_wallet_prompt": "<b>🔗 Please enter your Solana wallet address.</b>",
-    "connect_wallet": "<b>🔗 Connect wallet</b>",
     "connect_wallet_address_prompt": "<b>🔑 Enter the wallet address to connect to the bot</b>",
     "invalid_wallet_address": "<b>❌ Invalid Solana wallet address</b>",
-    "wallet_connected_successfully": "<b>🎉 Wallet with address {wallet_address}</b>\nsuccessfully connected to the bot",
+    "wallet_connected_successfully": "<b>🎉 Wallet with address {wallet_address}</b>"
+                                     "\nsuccessfully connected to the bot",
     "invalid_private_key": "<b>❌ Invalid wallet private key</b>",
     "connect_wallet_private_key_prompt": "<b>🔑 Please enter the correct private key of your Solana wallet</b>",
     "this_wallet_already_exists": "<i>This wallet address has already been connected before</i>",
 }
 
-
 # Сообщения для обработки команды balance
 BALANCE_MESSAGE = {
-    "no_registered_wallet": "<b>🛑 You don't have a registered wallet.</b>\n"
-                            "Create a new wallet with the command /create_wallet",
+    "no_registered_wallet": "<b>🛑 You don't have a registered wallet.</b>",
     "balance_success": "<b>💰 Your wallet balance:</b> {balance} SOL"
 }
-
 
 # Сообщения для 'connect_wallet'
 TOKEN_PRICE_MESSAGE = {
@@ -74,17 +77,17 @@ TOKEN_SELL_MESSAGES = {
 
 # Сообщения для переноса
 TOKEN_TRANSFER_MESSAGE = {
-    "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n"
+    "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n\n"
                                          "Note: The recipient's minimum balance\n"
                                          "should be at least 0.00089784 SOL",
     "transfer_amount_prompt": "<b>💸 Enter the amount of tokens to transfer:</b>",
     "invalid_wallet_address": "<b>❌ Invalid wallet address.</b>",
-    "transfer_successful": "<b>✅ Transfer of {amount} SOL to {recipient} successful.</b>",
+    "transfer_successful": "<b>✅ Transfer of {amount} SOL\nto {recipient}\nsuccessful.</b>",
     "transfer_not_successful": "<b>❌ Failed to transfer {amount} SOL to {recipient}.</b>",
     "insufficient_balance": "<b>❌ Insufficient funds in your wallet for this transfer.</b>",
     "insufficient_balance_recipient": "<b>❌ The recipient's balance\nshould be at least 0.00089784 Sol.</b>",
     "no_wallet_connected": "<b>🔗 Please connect your wallet before transferring tokens.</b>",
-    "list_sender_wallets": "<b>📋 Your wallet list:</b>",
+    "list_sender_wallets": "<b>📋 Your wallet list:</b>\n\nClick on the relevant wallet:",
     "choose_sender_wallet": "<b>🔑 Enter your wallet address:</b>",
     "invalid_wallet_choice": "<b>❌ Invalid wallet choice.</b>",
     "no_wallets_connected": "<b>❌ You don't have any connected wallets.\n"
@@ -92,15 +95,13 @@ TOKEN_TRANSFER_MESSAGE = {
     "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
     "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
     "save_wallet": "<i>Yes</i>",
-    "cancel": "<i>No</i>",
-    "invalid_amount": "<b>❌ Invalid amount.</b>",
+    "cancel": "<i>No</i>"
 }
-
 
 # Сообщения для обработки команды transactions
 TOKEN_TRANSACTION_MESSAGE = {
-    "list_wallets": "<b>📋 Your wallet list:</b>",
-    "wallet_transaction_info_template": "{number}) 💼 {name} 📍 {address}",
+    # "list_wallets": "<b>📋 Your wallet list:</b>",
+    # "wallet_transaction_info_template": "{number}) 💼 {name} 📍 {address}",
     "empty_history": "История транзакций пуста",
     "transaction_info": "Транзакция {transaction_id}:\n"
                         "Отправитель: {sender}\n"
@@ -123,11 +124,15 @@ HELP_MESSAGES = {
              "📜 <b>transactions</b> - view transaction history...\n\n"
              "💸 <b>send</b> - send coins...\n\n"
              "📥 <b>receive</b> - receive coins...\n\n"
-             "🗑️ <b>delete_wallet</b> - delete wallet...\n",
-    "start_message_continue": "<b>Continue further!</b>\nChoose a menu item:",
+             "🗑️ <b>delete_wallet</b> - delete wallet...\n"
+}
+UNKNOWN_MESSAGE = {
+    "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
+                          "Please use one of the available commands\n"
+                          "or options from the menu."
 }
 
 # Объединение всех сообщений в словарь LEXICON
 LEXICON: dict[str, str] = {**GENERAL_MESSAGE, **CREATE_WALLET_MESSAGE, **CONNECT_WALLET_MESSAGE, **BALANCE_MESSAGE,
                            **TOKEN_PRICE_MESSAGE, **TOKEN_BUY_MESSAGE, **TOKEN_SELL_MESSAGES, **TOKEN_TRANSFER_MESSAGE,
-                           **TOKEN_TRANSACTION_MESSAGE, **START_MESSAGES, **HELP_MESSAGES}
+                           **TOKEN_TRANSACTION_MESSAGE, **START_MESSAGES, **HELP_MESSAGES, **UNKNOWN_MESSAGE}

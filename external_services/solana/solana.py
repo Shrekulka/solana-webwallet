@@ -3,11 +3,11 @@
 import traceback
 from typing import Tuple
 
-from solana.rpc.api import Client
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
 from solders.pubkey import Pubkey
+
 from solders.system_program import transfer, TransferParams
 from solders.transaction_status import TransactionConfirmationStatus
 
@@ -137,18 +137,40 @@ def is_valid_amount(amount: str | int) -> bool:
         return False
 
 
-async def get_sol_balance(wallet_address, client):
-    try:
-        balance = (await client.get_balance(Pubkey.from_string(wallet_address))).value
-        # Преобразование лампортов в SOL
-        sol_balance = balance / 10 ** 9
-        logger.debug(f"wallet_address: {wallet_address}, balance: {balance}, sol_balance: {sol_balance}")
-        return sol_balance
+async def get_sol_balance(wallet_addresses, client):
+    """
+    Asynchronously retrieves the SOL balance for the specified wallet addresses.
 
-    except Exception as e:
+    Args:
+        wallet_addresses (Union[str, List[str]]): The wallet address or a list of wallet addresses.
+        client: The Solana client.
+
+    Returns:
+        Union[float, List[float]]: The SOL balance or a list of SOL balances corresponding to the wallet addresses.
+    """
+    try:
+        # Если передан одиночный адрес кошелька
+        if isinstance(wallet_addresses, str):
+            balance = (await client.get_balance(Pubkey.from_string(wallet_addresses))).value
+            # Преобразование лампортов в SOL
+            sol_balance = balance / 10 ** 9
+            logger.debug(f"wallet_address: {wallet_addresses}, balance: {balance}, sol_balance: {sol_balance}")
+            return sol_balance
+        # Если передан список адресов кошельков
+        elif isinstance(wallet_addresses, list):
+            sol_balances = []
+            for address in wallet_addresses:
+                balance = (await client.get_balance(Pubkey.from_string(address))).value
+                # Преобразование лампортов в SOL
+                sol_balance = balance / 10 ** 9
+                sol_balances.append(sol_balance)
+            return sol_balances
+        else:
+            raise ValueError("Invalid type for wallet_addresses. Expected str or list[str].")
+    except Exception as error:
         detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Failed to get Solana balance: {e}\n{detailed_error_traceback}")
-        raise Exception(f"Failed to get Solana balance: {e}\n{detailed_error_traceback}")
+        logger.error(f"Failed to get Solana balance: {error}\n{detailed_error_traceback}")
+        raise Exception(f"Failed to get Solana balance: {error}\n{detailed_error_traceback}")
 
 
 async def transfer_token(sender_address: str, sender_private_key: str, recipient_address: str, amount: float,
@@ -208,39 +230,32 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
             confirmation_status = confirm_transaction_response.value[0].confirmation_status
             if confirmation_status:
                 logger.debug(f"Transaction confirmation_status: {confirmation_status}")
-                if confirmation_status in [TransactionConfirmationStatus.Confirmed, TransactionConfirmationStatus.Finalized]:
+                if confirmation_status in [TransactionConfirmationStatus.Confirmed,
+                                           TransactionConfirmationStatus.Finalized]:
                     return True
     return False
 
 
 ######################################
-
-# TODO: часто ломается
 async def get_transaction_history(wallet_address, client):
     try:
-        #### test: с этой нодой меньше ошибок
-        # client = Client('https://api.testnet.solana.com')
-        client = AsyncClient('https://api.testnet.solana.com')
-        #### test
+        # Инициализация клиента
+        async with AsyncClient('https://api.testnet.solana.com') as client:
+            # Получение истории транзакций кошелька
+            signature_statuses = (
+                await client.get_signatures_for_address(Pubkey(wallet_address), limit=1)
+            ).value
+            transaction_history = []
 
-        # Получение истории транзакций кошелька
-        # signature_statuses = client.get_signatures_for_address(Pubkey.from_string(wallet_address))
-        # signature_statuses = (await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
-        signature_statuses = (await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
-        transaction_history = []
+            # Проходим по всем статусам подписей в результате
+            for signature_status in signature_statuses:
+                # Получаем транзакцию по подписи
+                transaction = (await client.get_transaction(signature_status.signature)).value
+                # Добавляем полученную транзакцию в историю транзакций
+                transaction_history.append(transaction)
 
-        # Проходим по всем статусам подписей в результате
-        # for signature_status in signature_statuses.value:
-        for signature_status in signature_statuses:
-            print('signature_status: ', signature_status)
-            # Получаем транзакцию по подписи
-            # transaction = client.get_transaction(signature_status.signature)
-            transaction = (await client.get_transaction(signature_status.signature)).value
-            # Добавляем полученную транзакцию в историю транзакций
-            transaction_history.append(transaction)
-
-        # # Возвращаем список истории транзакций
-        return transaction_history
+            # Возвращаем список истории транзакций
+            return transaction_history
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
@@ -249,7 +264,40 @@ async def get_transaction_history(wallet_address, client):
         # Дополнительная обработка ошибки, если необходимо
         raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
 
-
+# TODO: часто ломается
+# async def get_transaction_history(wallet_address, client):
+#     try:
+#         #### test: с этой нодой меньше ошибок
+#         # client = Client('https://api.testnet.solana.com')
+#         client = AsyncClient('https://api.testnet.solana.com')
+#         #### test
+#
+#         # Получение истории транзакций кошелька
+#         # signature_statuses = client.get_signatures_for_address(Pubkey.from_string(wallet_address))
+#         # signature_statuses = (await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
+#         signature_statuses = (
+#             await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)).value
+#         transaction_history = []
+#
+#         # Проходим по всем статусам подписей в результате
+#         # for signature_status in signature_statuses.value:
+#         for signature_status in signature_statuses:
+#             print('signature_status: ', signature_status)
+#             # Получаем транзакцию по подписи
+#             # transaction = client.get_transaction(signature_status.signature)
+#             transaction = (await client.get_transaction(signature_status.signature)).value
+#             # Добавляем полученную транзакцию в историю транзакций
+#             transaction_history.append(transaction)
+#
+#         # # Возвращаем список истории транзакций
+#         return transaction_history
+#
+#     except Exception as e:
+#         detailed_error_traceback = traceback.format_exc()
+#         # Логирование ошибки
+#         logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+#         # Дополнительная обработка ошибки, если необходимо
+#         raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
 
 #############################################################
 

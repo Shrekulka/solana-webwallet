@@ -1,4 +1,4 @@
-# solana_wallet_telegram_bot/handlers/transfer_handlers.py
+# solana_wallet_telegram_bot/handlers/transaction_handlers.py
 import traceback
 
 import solana.rpc.core
@@ -6,9 +6,11 @@ from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
+from sqlalchemy import select
 
 from database.database import get_db
-from external_services.solana.solana import is_valid_wallet_address, is_valid_amount, get_sol_balance, http_client, transfer_token
+from external_services.solana.solana import is_valid_wallet_address, is_valid_amount, get_sol_balance, http_client, \
+    transfer_token
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
@@ -19,28 +21,28 @@ from states.states import FSMWallet
 transfer_router: Router = Router()
 
 
-@transfer_router.callback_query(F.data.startswith("wallet_id:"), StateFilter(FSMWallet.choose_sender_wallet))
+@transfer_router.callback_query(F.data.startswith("wallet_address:"), StateFilter(FSMWallet.choose_sender_wallet))
 async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
-        Handles the user's selection of the sender wallet for transfer.
+    Handles the user's selection of the sender wallet for transfer.
 
-        Args:
-            callback (CallbackQuery): The callback query object containing data about the selected wallet.
-            state (FSMContext): The state context for working with chat states.
+    Args:
+        callback (CallbackQuery): The callback query object containing data about the selected wallet.
+        state (FSMContext): The state context for working with chat states.
 
-        Raises:
-            Exception: If an error occurs while processing the request.
-
-        Returns:
-            None
+    Returns:
+        None
     """
     try:
-        # Извлекаем id кошелька из callback_data
-        wallet_id = int(callback.data.split(":")[1])
+        # Извлекаем адрес кошелька из callback_data
+        wallet_address = callback.data.split(":")[1]
+        logger.debug(f"Wallet address: {wallet_address}")
+
         # Асинхронно получаем доступ к базе данных.
         async with await get_db() as session:
-            # Получаем данные кошелька из базы данных по его id
-            wallet = await session.get(SolanaWallet, wallet_id)
+            # Получаем данные кошелька из базы данных по его адресу
+            wallet = await session.execute(select(SolanaWallet).filter_by(wallet_address=wallet_address))
+            wallet = wallet.scalar()
 
             # Обновляем данные состояния с адресом и приватным ключом отправителя
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
@@ -49,7 +51,8 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
         await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt"])
         # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
         await state.set_state(FSMWallet.transfer_recipient_address)
-
+        # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_choose_sender_wallet: {e}\n{detailed_error_traceback}")
