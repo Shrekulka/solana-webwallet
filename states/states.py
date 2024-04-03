@@ -30,3 +30,7 @@ class FSMWallet(StatesGroup):
     transfer_recipient_address = State()  # Состояние ввода адреса кошелька получателя
     transfer_amount = State()             # Состояние ввода количества токенов для передачи
     choose_transaction_wallet = State()   # Состояние выбора кошелька для транзакций
+
+    transfer_sender_private_key = State()  # Состояние ввода приватного ключа отправителя
+    connect_wallet_add_name = State()
+    connect_wallet_add_description = State()

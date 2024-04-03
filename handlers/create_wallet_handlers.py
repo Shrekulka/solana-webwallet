@@ -105,20 +105,20 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
                 wallet = await SolanaWallet.update_wallet(session, user.id, wallet_address, name=name,
                                                           description=description)
                 if wallet is None:  # Если кошелек не найден, создаем новый
-                    wallet = await SolanaWallet.wallet_create(session, user.id, name=name,
+                    wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
                                                               description=description)
-                    await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
+                    await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
             # Иначе создаем новый кошелек
             else:
-                wallet = await SolanaWallet.wallet_create(session, user.id, name=name,
+                wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
                                                           description=description)
-                await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
+                await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
 
         # Если в данных состояния есть адрес кошелька
         if wallet_address:
             # Обновляем данные состояния с адресом и приватным ключом отправителя
             await state.update_data(sender_address=wallet.wallet_address,
-                                    sender_private_key=wallet.private_key)
+                                    sender_private_key=private_key)
             # Отправка запроса на ввод адреса получателя
             await message.answer(LEXICON["transfer_recipient_address_prompt"])
             # Установка состояния ввода адреса получателя
@@ -129,7 +129,7 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
                 LEXICON["wallet_created_successfully"].format(wallet_name=wallet.name,
                                                               wallet_description=wallet.description,
                                                               wallet_address=wallet.wallet_address,
-                                                              private_key=wallet.private_key))
+                                                              private_key=private_key))
             # Очищаем состояние после добавления кошелька
             await state.clear()
             # Отправляем сообщение с предложением продолжить и клавиатурой основного меню

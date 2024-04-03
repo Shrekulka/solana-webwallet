@@ -243,7 +243,7 @@ async def get_transaction_history(wallet_address, client):
         async with AsyncClient('https://api.testnet.solana.com') as client:
             # Получение истории транзакций кошелька
             signature_statuses = (
-                await client.get_signatures_for_address(Pubkey(wallet_address), limit=1)
+                await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)
             ).value
             transaction_history = []
 

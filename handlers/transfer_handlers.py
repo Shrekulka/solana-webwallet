@@ -9,8 +9,15 @@ from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
 from database.database import get_db
-from external_services.solana.solana import is_valid_wallet_address, is_valid_amount, get_sol_balance, http_client, \
-    transfer_token
+from external_services.solana.solana import (
+    is_valid_wallet_address,
+    is_valid_private_key,
+    is_valid_amount,
+    get_sol_balance,
+    http_client,
+    transfer_token,
+    get_wallet_address_from_private_key,
+)
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
@@ -44,18 +51,71 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
             wallet = await session.execute(select(SolanaWallet).filter_by(wallet_address=wallet_address))
             wallet = wallet.scalar()
 
-            # Обновляем данные состояния с адресом и приватным ключом отправителя
-            await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
+            # # Обновляем данные состояния с адресом и приватным ключом отправителя
+            # await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
+            # Обновляем данные состояния с адресом отправителя
+            await state.update_data(sender_address=wallet.wallet_address)
 
         # Отправляем запрос на ввод адреса получателя
-        await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt"])
+        await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"])
         # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
-        await state.set_state(FSMWallet.transfer_recipient_address)
+        # await state.set_state(FSMWallet.transfer_recipient_address)
+        await state.set_state(FSMWallet.transfer_sender_private_key)
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         await callback.answer()
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_choose_sender_wallet: {e}\n{detailed_error_traceback}")
+
+
+@transfer_router.message(StateFilter(FSMWallet.transfer_sender_private_key))
+async def process_transfer_sender_private_key(message: Message, state: FSMContext) -> None:
+    """
+        Handles the user's selection of the sender wallet for transfer.
+
+        Args:
+            callback (CallbackQuery): The callback query object containing data about the selected wallet.
+            state (FSMContext): The state context for working with chat states.
+
+        Raises:
+            Exception: If an error occurs while processing the request.
+
+        Returns:
+            None
+    """
+    try:
+        private_key = message.text
+        print(f'private_key: {private_key}')
+
+        if is_valid_private_key(private_key):
+            data = await state.get_data()
+            sender_address_from_bd = data.get("sender_address")
+            print(f'sender_address_from_bd:      {sender_address_from_bd}')
+            # keypair = Keypair.from_seed(bytes.fromhex(private_key))
+            # print('keypair: ', keypair)
+            # sender_address_from_keypair = str(keypair.pubkey())
+            sender_address_from_keypair = get_wallet_address_from_private_key(private_key)
+            print(f'sender_address_from_keypair: {sender_address_from_keypair}')
+
+            if sender_address_from_bd == sender_address_from_keypair:
+                # Обновляем данные состояния с приватным ключом отправителя
+                await state.update_data(sender_private_key=private_key)
+                # Отправляем запрос на ввод адреса получателя
+                await message.answer(LEXICON["transfer_recipient_address_prompt"])
+                # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
+                await state.set_state(FSMWallet.transfer_recipient_address)
+            else:
+                await message.answer(LEXICON["invalid_private_key"])
+                await message.answer(LEXICON["transfer_sender_private_key_prompt"])
+
+        else:
+            await message.answer(LEXICON["invalid_private_key"])
+            await message.answer(LEXICON["transfer_sender_private_key_prompt"])
+
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in process_transfer_sender_private_key: {e}\n{detailed_error_traceback}")
+
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_recipient_address))

@@ -42,9 +42,6 @@ class SolanaWallet(Base):
     # Адрес кошелька
     wallet_address = Column(String, index=True, unique=True, nullable=False)
 
-    # Приватный ключ кошелька
-    private_key = Column(String, nullable=False)
-
     # Поля для хранения баланса кошелька
     balance = Column(Float, nullable=False, default=0.0)
 
@@ -70,7 +67,7 @@ class SolanaWallet(Base):
     user = relationship('User', back_populates='wallets')
 
     @classmethod
-    async def wallet_create(cls, session: Session, user_id: int, name: str,
+    async def wallet_create(cls, session: Session, user_id: int, name: Optional[str] = None,
                             description: Optional[str] = None) -> 'SolanaWallet':
         """
         Class method for creating a wallet.
@@ -91,18 +88,16 @@ class SolanaWallet(Base):
         wallet_address, private_key = await create_solana_wallet()
 
         # Создание нового экземпляра класса SolanaWallet с указанными параметрами
-        wallet = cls(wallet_address=wallet_address, private_key=private_key, user_id=user_id, name=name,
-                     description=description)
+        wallet = cls(wallet_address=wallet_address, user_id=user_id, name=name, description=description)
         # Добавление созданного кошелька в сессию базы данных
         session.add(wallet)
         # Сохранение изменений в базе данных
         await session.commit()
         # Возвращение созданного кошелька
-        return wallet
+        return wallet, private_key
 
     @classmethod
-    async def connect_wallet(cls, session: Session, user_id: int, wallet_address: str,
-                             private_key: str) -> 'SolanaWallet':
+    async def connect_wallet(cls, session: Session, user_id: int, wallet_address: str, name: Optional[str] = None, description: Optional[str] = None) -> 'SolanaWallet':
         """
         Class method for connecting a wallet.
 
@@ -110,7 +105,8 @@ class SolanaWallet(Base):
             session (Session): Database session.
             user_id (int): User identifier.
             wallet_address (str): Wallet address.
-            private_key (str): Wallet private key.
+            name (str): Wallet name.
+            description (str): Wallet description.
 
         Returns:
             SolanaWallet: The connected wallet.
@@ -122,15 +118,8 @@ class SolanaWallet(Base):
         if not is_valid_wallet_address(wallet_address):
             raise ValueError("Invalid wallet address")
 
-        # Получение адреса кошелька из закрытого ключа
-        derived_wallet_address = get_wallet_address_from_private_key(private_key)
-
-        # Проверка соответствия адреса и закрытого ключа
-        if derived_wallet_address != wallet_address:
-            raise ValueError("Wallet address does not match the private key")
-
         # Создание нового экземпляра класса SolanaWallet с переданными параметрами
-        wallet = cls(wallet_address=wallet_address, private_key=private_key, user_id=user_id)
+        wallet = cls(wallet_address=wallet_address, user_id=user_id, name=name, description=description)
         # Добавление созданного кошелька в сессию базы данных
         session.add(wallet)
         # Сохранение изменений в базе данных

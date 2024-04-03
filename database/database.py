@@ -40,7 +40,6 @@ async def create_database() -> None:
             CREATE TABLE IF NOT EXISTS solana_wallets (
                 id INTEGER PRIMARY KEY,
                 wallet_address TEXT,
-                private_key TEXT,
                 balance REAL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

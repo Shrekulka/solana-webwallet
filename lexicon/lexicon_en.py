@@ -48,6 +48,7 @@ CONNECT_WALLET_MESSAGE = {
     "invalid_private_key": "<b>❌ Invalid wallet private key</b>",
     "connect_wallet_private_key_prompt": "<b>🔑 Please enter the correct private key of your Solana wallet</b>",
     "this_wallet_already_exists": "<i>This wallet address has already been connected before</i>",
+    "connect_wallet_add_name": "<b>🔑 Please enter name of your Solana wallet</b>",
 }
 
 # Сообщения для обработки команды balance
@@ -95,7 +96,10 @@ TOKEN_TRANSFER_MESSAGE = {
     "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
     "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
     "save_wallet": "<i>Yes</i>",
-    "cancel": "<i>No</i>"
+    "cancel": "<i>No</i>",
+    "invalid_amount": "<b>❌ Invalid amount.</b>",
+    "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
+    "invalid_private_key": "<b>❌ Invalid private key.</b>",
 }
 
 # Сообщения для обработки команды transactions
