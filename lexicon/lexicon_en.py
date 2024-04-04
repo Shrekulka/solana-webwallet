@@ -1,7 +1,7 @@
 # solana_wallet_telegram_bot/pylexicon/lexicon_en.py
 
-# Общие сообщения
-GENERAL_MESSAGE = {
+
+MAIN_MENU_BUTTONS: dict[str, str] = {
     "create_wallet": "🔑 Create wallet",
     "connect_wallet": "🔗 Connect wallet",
     "balance": "💰 Show balance",
@@ -13,42 +13,46 @@ GENERAL_MESSAGE = {
     "delete_wallet": "🗑️ Delete wallet",
     "settings": "⚙️ Crypto wallet settings",
     "donate": "💝 Donate to the team",
-    "unexpected_input": "❌ <b>Unexpected input</b>\n\n"
-                        "Please select an action from the menu\n"
-                        "or enter one of the available commands,\n"
-                        "such as /start or /help.",
+}
+
+OTHER_BUTTONS: dict[str, str] = {
+    "button_back": "⬅️ back",
     "back_to_main_menu": "<b>🏠 Main menu</b>\n\n"
                          "To view the list of available commands, type /help 😊",
 }
 
+GENERAL_MESSAGE: dict[str, str] = {
+    "unexpected_input": "❌ <b>Unexpected input</b>\n\n"
+                        "Please select an action from the menu\n"
+                        "or enter one of the available commands,\n"
+                        "such as /start or /help.",
+}
 CREATE_WALLET_MESSAGE = {
-    "create_wallet": "🔑 Create wallet",
-    "wallet_name_prompt": "💼 <b>Please enter the name for your wallet:</b>",
+    "create_name_wallet": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
-    "wallet_description_prompt": "💬 <b>Now, please enter the description for your wallet:</b>",
+    "create_description_wallet": "💬 <b>Now, please enter the description for your wallet:</b>",
     "wallet_created_successfully": "🎉 <b>Wallet created successfully!</b>\n"
                                    "<b><i>Wallet name:</i> {wallet_name}</b>\n"
                                    "<b><i>Wallet description:</i> {wallet_description}</b>\n"
                                    "<b><i>Wallet address:</i> {wallet_address}</b>\n"
                                    "<b><i>Private key:</i> {private_key}</b>\n",
-    "continue_message": "➡️ <b>Let's continue!</b>\n<i>Choose an option from the menu:</i>",
     "invalid_wallet_name": "❌ <b>Invalid wallet name entered.</b>\n"
                            "Please enter a valid name for your wallet.",
     "invalid_wallet_description": "❌ <b>Invalid wallet description entered.</b>\n"
-                                  "Please enter a valid description for your wallet."
+                                  "Please enter a valid description for your wallet.",
+    "create_new_name_wallet": "💼 <b>Enter a new name for the connected wallet:</b>",
 }
 
 # Сообщения для 'connect_wallet'
 CONNECT_WALLET_MESSAGE = {
-    "connect_wallet_prompt": "<b>🔗 Please enter your Solana wallet address.</b>",
-    "connect_wallet_address_prompt": "<b>🔑 Enter the wallet address to connect to the bot</b>",
+    "connect_wallet_address": "<b>🔑 Enter the wallet address to connect to the bot</b>",
+    "connect_wallet_add_name": "<b>💼 Please enter name of your wallet</b>",
+    "connect_wallet_add_description": "💬 <b>Now, please enter the description for your wallet:</b>",
     "invalid_wallet_address": "<b>❌ Invalid Solana wallet address</b>",
-    "wallet_connected_successfully": "<b>🎉 Wallet with address {wallet_address}</b>"
-                                     "\nsuccessfully connected to the bot",
-    "invalid_private_key": "<b>❌ Invalid wallet private key</b>",
-    "connect_wallet_private_key_prompt": "<b>🔑 Please enter the correct private key of your Solana wallet</b>",
+    "wallet_connected_successfully": "<b>🎉 Wallet with address:</b>\n"
+                                     "<b><i>{wallet_address}</i></b>\n"
+                                     "<b>successfully connected to the bot!</b>",
     "this_wallet_already_exists": "<i>This wallet address has already been connected before</i>",
-    "connect_wallet_add_name": "<b>🔑 Please enter name of your Solana wallet</b>",
 }
 
 # Сообщения для обработки команды balance
@@ -77,7 +81,7 @@ TOKEN_SELL_MESSAGES = {
 }
 
 # Сообщения для переноса
-TOKEN_TRANSFER_MESSAGE = {
+TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n\n"
                                          "Note: The recipient's minimum balance\n"
                                          "should be at least 0.00089784 SOL",
@@ -100,17 +104,11 @@ TOKEN_TRANSFER_MESSAGE = {
     "invalid_amount": "<b>❌ Invalid amount.</b>",
     "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
     "invalid_private_key": "<b>❌ Invalid private key.</b>",
-}
-
-# Сообщения для обработки команды transactions
-TOKEN_TRANSACTION_MESSAGE = {
-    # "list_wallets": "<b>📋 Your wallet list:</b>",
-    # "wallet_transaction_info_template": "{number}) 💼 {name} 📍 {address}",
-    "empty_history": "История транзакций пуста",
-    "transaction_info": "Транзакция {transaction_id}:\n"
-                        "Отправитель: {sender}\n"
-                        "Получатель: {recipient}\n"
-                        "Сумма: {amount} лампортов"
+    "empty_history": "<i>😔 Transaction history is empty.</i>",
+    "transaction_info": "<b>💼 Transaction:</b> {transaction_id}:\n"
+                        "<b>📲 Sender:</b> {sender}\n"
+                        "<b>📬 Recipient:</b> {recipient}\n"
+                        "<b>💰 Amount:</b> {amount} lamports"
 }
 
 # Сообщения для старта и справки
@@ -137,6 +135,7 @@ UNKNOWN_MESSAGE = {
 }
 
 # Объединение всех сообщений в словарь LEXICON
-LEXICON: dict[str, str] = {**GENERAL_MESSAGE, **CREATE_WALLET_MESSAGE, **CONNECT_WALLET_MESSAGE, **BALANCE_MESSAGE,
-                           **TOKEN_PRICE_MESSAGE, **TOKEN_BUY_MESSAGE, **TOKEN_SELL_MESSAGES, **TOKEN_TRANSFER_MESSAGE,
-                           **TOKEN_TRANSACTION_MESSAGE, **START_MESSAGES, **HELP_MESSAGES, **UNKNOWN_MESSAGE}
+LEXICON: dict[str, str] = {**GENERAL_MESSAGE, **CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE,
+                           **BALANCE_MESSAGE, **TOKEN_PRICE_MESSAGE, **TOKEN_BUY_MESSAGE, **TOKEN_SELL_MESSAGES,
+                           **MAIN_MENU_BUTTONS, **TOKEN_TRANSFER_TRANSACTION_MESSAGE, **START_MESSAGES, **HELP_MESSAGES,
+                           **UNKNOWN_MESSAGE}

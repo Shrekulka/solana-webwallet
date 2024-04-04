@@ -69,6 +69,13 @@ async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboar
         # Увеличиваем счетчик
         count += 1
 
+    # Добавляем кнопку "Вернуться в главное меню"
+    return_to_main_menu_button = InlineKeyboardButton(
+        text=LEXICON["button_back"],
+        callback_data="callback_button_back"
+    )
+    wallet_buttons.append([return_to_main_menu_button])
+
     # Создаем клавиатуру из кнопок
     wallet_keyboard = InlineKeyboardMarkup(inline_keyboard=wallet_buttons)
     return wallet_keyboard  # Возвращаем созданную клавиатуру

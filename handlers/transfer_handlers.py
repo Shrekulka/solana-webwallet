@@ -1,4 +1,5 @@
 # solana_wallet_telegram_bot/handlers/transaction_handlers.py
+import asyncio
 import traceback
 
 import solana.rpc.core
@@ -18,6 +19,7 @@ from external_services.solana.solana import (
     transfer_token,
     get_wallet_address_from_private_key,
 )
+from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
@@ -28,7 +30,8 @@ from states.states import FSMWallet
 transfer_router: Router = Router()
 
 
-@transfer_router.callback_query(F.data.startswith("wallet_address:"), StateFilter(FSMWallet.choose_sender_wallet))
+@transfer_router.callback_query(F.data.startswith("wallet_address:"),
+                                StateFilter(FSMWallet.transfer_choose_sender_wallet))
 async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Handles the user's selection of the sender wallet for transfer.
@@ -57,7 +60,7 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
             await state.update_data(sender_address=wallet.wallet_address)
 
         # Отправляем запрос на ввод адреса получателя
-        await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"])
+        await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
         # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
         # await state.set_state(FSMWallet.transfer_recipient_address)
         await state.set_state(FSMWallet.transfer_sender_private_key)
@@ -70,19 +73,6 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_sender_private_key))
 async def process_transfer_sender_private_key(message: Message, state: FSMContext) -> None:
-    """
-        Handles the user's selection of the sender wallet for transfer.
-
-        Args:
-            callback (CallbackQuery): The callback query object containing data about the selected wallet.
-            state (FSMContext): The state context for working with chat states.
-
-        Raises:
-            Exception: If an error occurs while processing the request.
-
-        Returns:
-            None
-    """
     try:
         private_key = message.text
         print(f'private_key: {private_key}')
@@ -90,7 +80,7 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
         if is_valid_private_key(private_key):
             data = await state.get_data()
             sender_address_from_bd = data.get("sender_address")
-            print(f'sender_address_from_bd:      {sender_address_from_bd}')
+            print(f'sender_address_from_bd: {sender_address_from_bd}')
             # keypair = Keypair.from_seed(bytes.fromhex(private_key))
             # print('keypair: ', keypair)
             # sender_address_from_keypair = str(keypair.pubkey())
@@ -101,21 +91,31 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
                 # Обновляем данные состояния с приватным ключом отправителя
                 await state.update_data(sender_private_key=private_key)
                 # Отправляем запрос на ввод адреса получателя
-                await message.answer(LEXICON["transfer_recipient_address_prompt"])
+                await message.answer(LEXICON["transfer_recipient_address_prompt"], reply_markup=back_keyboard)
                 # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
                 await state.set_state(FSMWallet.transfer_recipient_address)
             else:
-                await message.answer(LEXICON["invalid_private_key"])
-                await message.answer(LEXICON["transfer_sender_private_key_prompt"])
-
+                sent_message = await message.answer(LEXICON["invalid_private_key"], reply_markup=None)
+                await asyncio.sleep(1)
+                await message.delete()
+                await sent_message.delete()
+                await message.answer(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
+                # или
+                # await message.answer(LEXICON["invalid_private_key"])
+                # await message.answer(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
         else:
-            await message.answer(LEXICON["invalid_private_key"])
-            await message.answer(LEXICON["transfer_sender_private_key_prompt"])
+            sent_message = await message.answer(LEXICON["invalid_private_key"], reply_markup=None)
+            await asyncio.sleep(1)
+            await message.delete()
+            await sent_message.delete()
+            await message.answer(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
+            # или
+            # await message.answer(LEXICON["invalid_private_key"])
+            # await message.answer(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_transfer_sender_private_key: {e}\n{detailed_error_traceback}")
-
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_recipient_address))
@@ -142,13 +142,19 @@ async def process_transfer_recipient_address(message: Message, state: FSMContext
             # Если адрес получателя валиден, обновляем данные состояния.
             await state.update_data(recipient_address=recipient_address)
             # Отправляем запрос на ввод суммы для перевода.
-            await message.answer(LEXICON["transfer_amount_prompt"])
+            await message.answer(LEXICON["transfer_amount_prompt"], reply_markup=None)
             # Устанавливаем состояние transfer_amount для перехода к следующему шагу в процессе перевода.
             await state.set_state(FSMWallet.transfer_amount)
         else:
             # Если адрес получателя невалиден, отправляем сообщение с просьбой ввести корректный адрес.
-            await message.answer(LEXICON["invalid_wallet_address"])
-            await message.answer(LEXICON["transfer_recipient_address_prompt"])
+            sent_message = await message.answer(LEXICON["invalid_wallet_address"], reply_markup=None)
+            await asyncio.sleep(1)
+            await message.delete()
+            await sent_message.delete()
+            await message.answer(LEXICON["transfer_recipient_address_prompt"], reply_markup=back_keyboard)
+            # или
+            # await message.answer(LEXICON["invalid_wallet_address"])
+            # await message.answer(LEXICON["transfer_recipient_address_prompt"], reply_markup=back_keyboard)
     except Exception as error:
         # Обработка и логирование ошибок, возникших во время обработки запроса.
         detailed_error_traceback = traceback.format_exc()
@@ -171,11 +177,13 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
             None
     """
     try:
-        # Преобразуем текст сообщения, содержащий сумму перевода, в число с плавающей точкой.
-        if not is_valid_amount(message.text):
+        # Преобразуем текст сообщения, содержащий сумму перевода, в строку,
+        # чтобы можно было заменить запятые на точки, если они присутствуют.
+        amount_text = str(message.text).replace(',', '.')
+        if not is_valid_amount(amount_text):
             raise ValueError
 
-        amount = float(message.text)
+        amount = float(amount_text)
         # Получаем данные из состояния чата.
         data = await state.get_data()
         # Извлекаем адрес отправителя из данных состояния.
@@ -203,8 +211,14 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
             logger.error(f"Error getting Solana balance or minimum balance: {error}\n{detailed_error_traceback}")
 
             # Отправляем пользователю сообщение о недостаточном балансе и запрос на ввод суммы для перевода.
-            await message.answer(LEXICON["insufficient_balance"])
-            await message.answer(LEXICON["transfer_amount_prompt"])
+            sent_message = await message.answer(LEXICON["insufficient_balance"], reply_markup=None)
+            await asyncio.sleep(1)
+            await message.delete()
+            await sent_message.delete()
+            await message.answer(LEXICON["transfer_amount_prompt"], reply_markup=back_keyboard)
+            # или
+            # await message.answer(LEXICON["insufficient_balance"])
+            # await message.answer(LEXICON["transfer_amount_prompt"])
 
             # Возвращаемся из функции, чтобы предотвратить дальнейшее выполнение кода.
             return
@@ -227,20 +241,29 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
         # Если баланс отправителя недостаточен для перевода (включая минимальный баланс).
         else:
             # Отправляем пользователю сообщение о недостаточном балансе и запрос на ввод суммы для перевода.
-            await message.answer(LEXICON["insufficient_balance"])
-            await message.answer(LEXICON["transfer_amount_prompt"])
+            sent_message = await message.answer(LEXICON["insufficient_balance"], reply_markup=None)
+            await asyncio.sleep(1)
+            await message.delete()
+            await sent_message.delete()
+            await message.answer(LEXICON["transfer_amount_prompt"], reply_markup=back_keyboard)
+            # или
+            # await message.answer(LEXICON["insufficient_balance"])
+            # await message.answer(LEXICON["transfer_amount_prompt"])
             # Выходим из функции после вывода сообщений
             return
 
         # Очищаем состояние перед завершением.
         await state.clear()
         # Отправляем сообщение с инструкцией о продолжении и клавиатурой основных кнопок.
-        await message.answer(LEXICON["continue_message"], reply_markup=main_keyboard)
+        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
 
     # Если возникает ошибка типа ValueError, когда пользователь вводит некорректную сумму.
     except ValueError:
         # Отправляем сообщение о неверной сумме и просим пользователя ввести сумму для перевода заново.
-        await message.answer(LEXICON["invalid_amount"])
+        sent_message = await message.answer(LEXICON["invalid_amount"], reply_markup=None)
+        await asyncio.sleep(1)
+        await message.delete()
+        await sent_message.delete()
         await message.answer(LEXICON["transfer_amount_prompt"])
     except solana.rpc.core.RPCException as rpc_exception:
         # Проверяем, является ли ошибка связанной с недостаточным балансом для аренды.
@@ -250,8 +273,10 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
                 "Transaction simulation failed: Transaction results in an account with insufficient funds for rent. "
                 "Minimum recipient balance should be 0.00089784.")
             # Отправляем сообщение пользователю о нехватке баланса для аренды.
-            await message.answer(LEXICON["insufficient_balance_recipient"])
-            # Повторяем запрос на ввод адреса получателя.
+            sent_message = await message.answer(LEXICON["insufficient_balance_recipient"], reply_markup=None)
+            await asyncio.sleep(1)
+            await message.delete()
+            await sent_message.delete()
             await message.answer(LEXICON["transfer_recipient_address_prompt"])
             # Устанавливаем состояние transfer_recipient_address для возврата к запросу адреса получателя.
             await state.set_state(FSMWallet.transfer_recipient_address)

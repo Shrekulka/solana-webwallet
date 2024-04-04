@@ -93,7 +93,14 @@ async def process_unexpected_input(message: Message) -> None:
             None
     """
     try:
-        await message.edit_text(LEXICON["unexpected_input"])
+        # Проверяем, может ли бот редактировать сообщения
+        if message.chat.type == 'private':  # Проверяем, что чат является приватным
+            if message.text:  # Проверяем, есть ли текст в сообщении
+                await message.answer(LEXICON["unexpected_input"])
+            else:
+                logger.warning("Received message without text. Cannot edit.")
+        else:
+            logger.warning("Received message in a non-private chat. Cannot edit.")
     except Exception as error:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_unexpected_input: {error}\n{detailed_send_message_error}")
@@ -113,9 +120,9 @@ async def process_create_wallet_command(callback: CallbackQuery, state: FSMConte
     """
     try:
         # Отправляем сообщение с просьбой ввести имя для кошелька
-        await callback.message.edit_text(LEXICON["wallet_name_prompt"])
+        await callback.message.edit_text(LEXICON["create_name_wallet"])
         # Переход в состояние добавления имени кошелька
-        await state.set_state(FSMWallet.add_name_wallet)
+        await state.set_state(FSMWallet.create_wallet_add_name)
         # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         await callback.answer()
     except Exception as error:
@@ -140,9 +147,9 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
         logger.info(callback.model_dump_json(indent=4, exclude_none=True))
 
         # Запрашиваем у пользователя адрес кошелька
-        await callback.message.edit_text(LEXICON["connect_wallet_prompt"])
+        await callback.message.edit_text(LEXICON["connect_wallet_address"])
         # Переход в состояние добавления
-        await state.set_state(FSMWallet.connect_wallet_address)
+        await state.set_state(FSMWallet.connect_wallet_add_address)
         # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         await callback.answer()
     except Exception as error:

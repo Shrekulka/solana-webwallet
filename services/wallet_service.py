@@ -104,7 +104,7 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
                 await callback.message.edit_text(LEXICON["list_sender_wallets"], reply_markup=wallet_keyboard)
                 if action == "transfer":
                     # Устанавливаем состояние FSM для выбора отправителя
-                    await state.set_state(FSMWallet.choose_sender_wallet)
+                    await state.set_state(FSMWallet.transfer_choose_sender_wallet)
                 elif action == "transactions":
                     # Устанавливаем состояние FSM для выбора отправителя
                     await state.set_state(FSMWallet.choose_transaction_wallet)

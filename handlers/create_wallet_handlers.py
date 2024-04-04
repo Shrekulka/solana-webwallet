@@ -8,6 +8,7 @@ from aiogram.types import Message
 from sqlalchemy import select
 
 from database.database import get_db
+from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
@@ -19,8 +20,8 @@ from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 create_wallet_router: Router = Router()
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.add_name_wallet),
-                              lambda message: is_valid_wallet_name(message.text))
+@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_name),
+                              lambda message: message.text and is_valid_wallet_name(message.text))
 async def process_wallet_name(message: Message, state: FSMContext) -> None:
     """
         Handler for entering the wallet name.
@@ -33,9 +34,6 @@ async def process_wallet_name(message: Message, state: FSMContext) -> None:
             None
     """
     try:
-        # Логируем информацию о сообщении
-        logger.info(message.model_dump_json(indent=4, exclude_none=True))
-
         # Сохраняем введенное имя кошелька в состояние
         await state.update_data(wallet_name=message.text)
 
@@ -49,16 +47,16 @@ async def process_wallet_name(message: Message, state: FSMContext) -> None:
         await message.answer(text=LEXICON["wallet_name_confirmation"].format(wallet_name=name))
 
         # Запрашиваем ввод описания кошелька
-        await message.answer(text=LEXICON["wallet_description_prompt"])
+        await message.answer(text=LEXICON["create_description_wallet"], reply_markup=back_keyboard)
 
         # Переходим к добавлению описания кошелька
-        await state.set_state(FSMWallet.add_description_wallet)
+        await state.set_state(FSMWallet.create_wallet_add_description)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_wallet_name: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.add_name_wallet))
+@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_name))
 async def process_invalid_wallet_name(message: Message, state: FSMContext) -> None:
     """
         Handler for incorrect wallet name input.
@@ -75,14 +73,14 @@ async def process_invalid_wallet_name(message: Message, state: FSMContext) -> No
         await message.answer(text=LEXICON["invalid_wallet_name"])
 
         # Запрашиваем ввод имени кошелька заново
-        await message.answer(text=LEXICON["wallet_name_prompt"])
+        await message.answer(text=LEXICON["create_name_wallet"], reply_markup=back_keyboard)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_invalid_wallet_name: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.add_description_wallet),
-                              lambda message: is_valid_wallet_description(message.text))
+@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_description),
+                              lambda message: message.text and is_valid_wallet_description(message.text))
 async def process_wallet_description(message: Message, state: FSMContext) -> None:
     try:
         # Обновляем данные состояния, добавляя введенное описание
@@ -106,40 +104,30 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
                                                           description=description)
                 if wallet is None:  # Если кошелек не найден, создаем новый
                     wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
-                                                              description=description)
+                                                                           description=description)
                     await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
             # Иначе создаем новый кошелек
             else:
                 wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
-                                                          description=description)
+                                                                       description=description)
                 await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
 
-        # Если в данных состояния есть адрес кошелька
-        if wallet_address:
-            # Обновляем данные состояния с адресом и приватным ключом отправителя
-            await state.update_data(sender_address=wallet.wallet_address,
-                                    sender_private_key=private_key)
-            # Отправка запроса на ввод адреса получателя
-            await message.answer(LEXICON["transfer_recipient_address_prompt"])
-            # Установка состояния ввода адреса получателя
-            await state.set_state(FSMWallet.transfer_recipient_address)
-        else:
-            # Если адреса кошелька нет, выводим сообщение об успешном создании и возвращаемся в главное меню
-            await message.answer(
-                LEXICON["wallet_created_successfully"].format(wallet_name=wallet.name,
-                                                              wallet_description=wallet.description,
-                                                              wallet_address=wallet.wallet_address,
-                                                              private_key=private_key))
-            # Очищаем состояние после добавления кошелька
-            await state.clear()
-            # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
-            await message.answer(LEXICON["continue_message"], reply_markup=main_keyboard)
+        # Если адреса кошелька нет, выводим сообщение об успешном создании и возвращаемся в главное меню
+        await message.answer(
+            LEXICON["wallet_created_successfully"].format(wallet_name=wallet.name,
+                                                          wallet_description=wallet.description,
+                                                          wallet_address=wallet.wallet_address,
+                                                          private_key=private_key))
+        # Очищаем состояние после добавления кошелька
+        await state.clear()
+        # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
+        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_wallet_description: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.add_description_wallet))
+@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_description))
 async def process_invalid_wallet_description(message: Message, state: FSMContext) -> None:
     """
         Handler for invalid wallet description input.
@@ -155,7 +143,7 @@ async def process_invalid_wallet_description(message: Message, state: FSMContext
         # Отправляем сообщение о недопустимом описании кошелька
         await message.answer(text=LEXICON["invalid_wallet_description"])
         # Запрашиваем ввод описания кошелька еще раз
-        await message.answer(text=LEXICON["wallet_description_prompt"])
+        await message.answer(text=LEXICON["create_description_wallet"], reply_markup=back_keyboard)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_invalid_wallet_description: {e}\n{detailed_error_traceback}")

@@ -7,7 +7,6 @@ from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
 from solders.pubkey import Pubkey
-
 from solders.system_program import transfer, TransferParams
 from solders.transaction_status import TransactionConfirmationStatus
 
@@ -129,9 +128,11 @@ def is_valid_private_key(private_key: str) -> bool:
         return False
 
 
-def is_valid_amount(amount: str | int) -> bool:
+def is_valid_amount(amount: str | int | float) -> bool:
+    if isinstance(amount, (int, float)):
+        return True
     try:
-        float(amount)
+        float_amount = float(amount)
         return True
     except ValueError:
         return False
