@@ -5,8 +5,8 @@ import traceback
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from aiogram.fsm.storage.redis import RedisStorage
-from redis.asyncio.client import Redis
+# from aiogram.fsm.storage.redis import RedisStorage
+# from redis.asyncio.client import Redis
 
 from config_data.config import config
 from database.database import init_database
