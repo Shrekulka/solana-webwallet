@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     db_host: str                      # URL-адрес базы данных
     db_user: str                      # Имя пользователя базы данных
     db_password: SecretStr            # Пароль к базе данных
+    db_engine: str                    # движок бд
     bot_token: SecretStr              # Токена бота
     admin_ids: Union[list[int], int]  # Список id администраторов бота
 

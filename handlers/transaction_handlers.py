@@ -37,7 +37,7 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
         logger.debug(f"Wallet address: {wallet_address}")
 
         transaction_history = await get_transaction_history(wallet_address, http_client)
-        logger.debug(f"Transaction history: {transaction_history}")
+        # logger.debug(f"Transaction history: {transaction_history}")
         if transaction_history:
 
             # for i, tr in enumerate(transaction_history):
@@ -70,8 +70,8 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
                 for transaction in transaction_history
             ]
 
-            for i, tr_mes in enumerate(transaction_messages):
-                print(f'{i}. transaction_messages: {tr_mes}\n\n')
+            # for i, tr_mes in enumerate(transaction_messages):
+            #     print(f'{i}. transaction_messages: {tr_mes}\n\n')
 
             # TODO ERROR: aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
             await callback.answer(f'Last transaction: \n{transaction_messages[0]}')

@@ -83,7 +83,7 @@ async def process_connect_wallet_name(message: Message, state: FSMContext) -> No
     """
     try:
         # Логируем информацию о сообщении
-        logger.info(message.model_dump_json(indent=4, exclude_none=True))
+        # logger.info(message.model_dump_json(indent=4, exclude_none=True))
 
         # Сохраняем введенное имя кошелька в состояние
         await state.update_data(wallet_name=message.text)

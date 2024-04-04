@@ -34,7 +34,7 @@ async def process_start_command(message: Message, state: FSMContext) -> None:
     """
     try:
         # Логирование информации о сообщении в формате JSON
-        logger.info(message.model_dump_json(indent=4, exclude_none=True))
+        # logger.info(message.model_dump_json(indent=4, exclude_none=True))
 
         # Отправка сообщения пользователю с приветственным текстом и клавиатурой
         await message.answer(LEXICON["/start"].format(first_name=message.from_user.first_name),
@@ -70,7 +70,7 @@ async def process_help_command(message: Message, state: FSMContext) -> None:
     """
     try:
         # Выводим информацию об объекте сообщения в лог терминала
-        logger.info(message.model_dump_json(indent=4, exclude_none=True))
+        # logger.info(message.model_dump_json(indent=4, exclude_none=True))
 
         # Отправляем сообщение со справочной информацией о командах из лексикона
         await message.answer(LEXICON["/help"])
@@ -144,7 +144,7 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
     """
     try:
         # Выводим информацию об объекте сообщения в лог терминала
-        logger.info(callback.model_dump_json(indent=4, exclude_none=True))
+        # logger.info(callback.model_dump_json(indent=4, exclude_none=True))
 
         # Запрашиваем у пользователя адрес кошелька
         await callback.message.edit_text(LEXICON["connect_wallet_address"])

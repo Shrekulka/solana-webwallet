@@ -75,17 +75,14 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
 async def process_transfer_sender_private_key(message: Message, state: FSMContext) -> None:
     try:
         private_key = message.text
-        print(f'private_key: {private_key}')
 
         if is_valid_private_key(private_key):
             data = await state.get_data()
             sender_address_from_bd = data.get("sender_address")
-            print(f'sender_address_from_bd: {sender_address_from_bd}')
             # keypair = Keypair.from_seed(bytes.fromhex(private_key))
             # print('keypair: ', keypair)
             # sender_address_from_keypair = str(keypair.pubkey())
             sender_address_from_keypair = get_wallet_address_from_private_key(private_key)
-            print(f'sender_address_from_keypair: {sender_address_from_keypair}')
 
             if sender_address_from_bd == sender_address_from_keypair:
                 # Обновляем данные состояния с приватным ключом отправителя
