@@ -69,6 +69,13 @@ async def process_back_button(callback: CallbackQuery, state: FSMContext) -> Non
             await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt"])
             await callback.message.edit_reply_markup(reply_markup=back_keyboard)
 
+        #############################################################################################################
+
+        elif current_state == FSMWallet.choose_transaction_wallet:
+            await state.set_state(default_state)
+            await callback.message.edit_text(LEXICON["back_to_main_menu"])
+            await callback.message.edit_reply_markup(reply_markup=main_keyboard)
+
         await callback.answer()
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()

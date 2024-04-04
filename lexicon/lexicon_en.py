@@ -48,7 +48,7 @@ CONNECT_WALLET_MESSAGE = {
     "connect_wallet_address": "<b>🔑 Enter the wallet address to connect to the bot</b>",
     "connect_wallet_add_name": "<b>💼 Please enter name of your wallet</b>",
     "connect_wallet_add_description": "💬 <b>Now, please enter the description for your wallet:</b>",
-    "invalid_wallet_address": "<b>❌ Invalid Solana wallet address</b>",
+    "invalid_wallet_address": "<b>❌ Invalid wallet address</b>",
     "wallet_connected_successfully": "<b>🎉 Wallet with address:</b>\n"
                                      "<b><i>{wallet_address}</i></b>\n"
                                      "<b>successfully connected to the bot!</b>",
@@ -104,7 +104,7 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "invalid_amount": "<b>❌ Invalid amount.</b>",
     "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
     "invalid_private_key": "<b>❌ Invalid private key.</b>",
-    "empty_history": "<i>😔 Transaction history is empty.</i>",
+    "empty_history": "😔 Transaction history is empty.",
     "transaction_info": "<b>💼 Transaction:</b> {transaction_id}:\n"
                         "<b>📲 Sender:</b> {sender}\n"
                         "<b>📬 Recipient:</b> {recipient}\n"

@@ -1,5 +1,4 @@
 # solana_wallet_telegram_bot/handlers/transaction_handlers.py
-
 import traceback
 
 from aiogram import Router, F
@@ -8,7 +7,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from external_services.solana.solana import http_client, get_transaction_history
-from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from states.states import FSMWallet
@@ -78,11 +76,8 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
             # TODO ERROR: aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
             await callback.answer(f'Last transaction: \n{transaction_messages[0]}')
         else:
-            await callback.answer(LEXICON["empty_history"])
+            await callback.answer(LEXICON["empty_history"], show_alert=True, reply_markup=None)
 
-        await state.clear()
-        # Отправляем сообщение с инструкцией о продолжении и клавиатурой основных кнопок.
-        await callback.answer(LEXICON["continue_message"], reply_markup=main_keyboard)
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         await callback.answer()
     except Exception as e:
