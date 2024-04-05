@@ -198,3 +198,4 @@ dist/
 .idea
 .venv/
 tmp/
+*.db
