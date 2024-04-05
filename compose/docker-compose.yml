@@ -22,31 +22,31 @@ services:
     volumes:
       - ../var/postgres-data:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: solanabot_pgadmin4
-    restart: always
-    ports:
-      - '8888:80'
-    user: '$UID:$GID'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: solanabot
-    volumes:
-      - ../var/pgadmin-data:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: solanabot_pgadmin4
+  #   restart: always
+  #   ports:
+  #     - '8888:80'
+  #   user: '$UID:$GID'
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: solanabot
+  #   volumes:
+  #     - ../var/pgadmin-data:/var/lib/pgadmin
 
-  redis:
-    image: redis:latest
-    container_name: solanabot_redis
-    command: redis-server
-    ports:
-      - '6379:6379'
-    volumes:
-      - ../var/redis:/var/lib/redis
-      - ../var/redis-config:/usr/local/etc/redis/redis.conf
+  # redis:
+  #   image: redis:latest
+  #   container_name: solanabot_redis
+  #   command: redis-server
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - ../var/redis:/var/lib/redis
+  #     - ../var/redis-config:/usr/local/etc/redis/redis.conf
 
 volumes:
-  local_pgdata:
-  pgadmin-data:
-  redis:
-  redis-config:
+  postgres-data:
+  # pgadmin-data:
+  # redis:
+  # redis-config:
