@@ -6,7 +6,8 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from external_services.solana.solana import http_client, get_transaction_history
+from external_services.solana.solana import get_transaction_history
+from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from states.states import FSMWallet
@@ -19,36 +20,27 @@ transaction_router: Router = Router()
                                    StateFilter(FSMWallet.choose_transaction_wallet))
 async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
-        Handles the user's selection of the wallet for transaction.
+        Handles the button press to select a wallet address for fetching transaction history.
 
-        Args:
-            callback (CallbackQuery): The callback query object containing data about the selected wallet.
-            state (FSMContext): The state context for working with chat states.
-
-        Raises:
-            Exception: If an error occurs while processing the request.
+        Arguments:
+        callback (CallbackQuery): The callback query object.
+        state (FSMContext): The state context of the finite state machine.
 
         Returns:
-            None
+        None
     """
     try:
         # Извлекаем адрес кошелька из callback_data
         wallet_address = callback.data.split(":")[1]
         logger.debug(f"Wallet address: {wallet_address}")
 
-        transaction_history = await get_transaction_history(wallet_address, http_client)
-        # logger.debug(f"Transaction history: {transaction_history}")
+        transaction_history = await get_transaction_history(wallet_address)
+        logger.debug(f"Transaction history: {transaction_history}")
+
         if transaction_history:
-
-            # for i, tr in enumerate(transaction_history):
-            #     print(f'*** {i + 1}. transaction: {tr}\n')
-
-            # Если история транзакций существует, формируем сообщение с информацией о транзакциях.
-            # for async client
-            transaction_messages = [
-                # Форматирование каждого сообщения о транзакции с помощью LEXICON и данных из истории транзакций.
-                LEXICON["transaction_info"].format(
-                    # Идентификатор транзакции, обрезанный до первых 8 символов для краткости.
+            # Формируем сообщения для каждой транзакции
+            for transaction in transaction_history[:5]:
+                transaction_message = LEXICON["transaction_info"].format(
                     transaction_id='{}...{}'.format(
                         str(transaction.transaction.transaction.signatures[0])[:4],
                         str(transaction.transaction.transaction.signatures[0])[-4:],
@@ -66,15 +58,9 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
                     # Разница в балансе отправителя до и после транзакции, выраженная в SOL.
                     amount=transaction.transaction.meta.pre_balances[0] - transaction.transaction.meta.post_balances[0]
                 )
-                # Итерация по каждой транзакции в истории транзакций.
-                for transaction in transaction_history
-            ]
 
-            # for i, tr_mes in enumerate(transaction_messages):
-            #     print(f'{i}. transaction_messages: {tr_mes}\n\n')
-
-            # TODO ERROR: aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
-            await callback.answer(f'Last transaction: \n{transaction_messages[0]}')
+                # Отправляем каждую транзакцию в отдельном сообщении
+                await callback.message.answer(transaction_message)
         else:
             await callback.answer(LEXICON["empty_history"], show_alert=True, reply_markup=None)
 
@@ -83,3 +69,8 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in choose_transaction_wallet: {e}\n{detailed_error_traceback}")
+        # Отправляем сообщение пользователю о недоступности сервера и просьбе повторить запрос позже
+        await callback.answer(LEXICON["server_unavailable"], show_alert=True, reply_markup=None)
+        # Возвращаем пользователя в главное меню
+        await callback.message.edit_text(LEXICON["back_to_main_menu"])
+        await callback.message.edit_reply_markup(reply_markup=main_keyboard)

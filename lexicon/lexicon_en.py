@@ -106,21 +106,36 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
     "invalid_private_key": "<b>❌ Invalid private key.</b>",
     "empty_history": "😔 Transaction history is empty.",
+    "server_unavailable": "The server is currently unavailable. Please try again later.",
     "transaction_info": "<b>💼 Transaction:</b> {transaction_id}:\n"
                         "<b>📲 Sender:</b> {sender}\n"
                         "<b>📬 Recipient:</b> {recipient}\n"
                         "<b>💰 Amount:</b> {amount} lamports"
 }
 
-# Сообщения для старта и справки
+# # Сообщения для старта и справки
+# START_MESSAGES = {
+#     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
+#               "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
+#               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
+#               "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
+#               "<i>https://api.testnet.solana.com</i>"
+#               "\n\n❓ To view the list of available commands, type /help 😊",
+# }
+
 START_MESSAGES = {
     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
+              "<i>This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
+              "<i>Here you can buy, sell, store, and pay using your wallet.</i>\n"
+              "\n\nTo view the list of available commands, type /help 😊"
               "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
               "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
+            #   "<i>https://api.devnet.solana.com</i>"
               "<i>https://api.testnet.solana.com</i>"
               "\n\n❓ To view the list of available commands, type /help 😊",
 }
+
 
 # Справочное сообщение бота
 HELP_MESSAGES = {

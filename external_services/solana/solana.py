@@ -1,8 +1,11 @@
 # solana_wallet_telegram_bot/external_services/solana/solana.py
-
+import asyncio
+import time
 import traceback
-from typing import Tuple
+from typing import Tuple, Dict, List, Union, Optional, Any
 
+import base58
+import httpx
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
@@ -10,12 +13,15 @@ from solders.pubkey import Pubkey
 from solders.system_program import transfer, TransferParams
 from solders.transaction_status import TransactionConfirmationStatus
 
+from config_data.config import SOLANA_NODE_URL, LAMPORT_TO_SOL_RATIO, PRIVATE_KEY_HEX_LENGTH, PRIVATE_KEY_BINARY_LENGTH, \
+    TRANSACTION_HISTORY_CACHE_DURATION
 from logger_config import logger
 
 # Создание клиента для подключения к тестовой сети Devnet
-# http_client = Client("https://api.devnet.solana.com")
-# http_client = AsyncClient("https://api.devnet.solana.com")
-http_client = AsyncClient('https://api.testnet.solana.com')
+http_client = AsyncClient(SOLANA_NODE_URL)
+
+# Создаем словарь для кэширования результатов запросов истории транзакций
+transaction_history_cache: Dict[str, Tuple[List, float]] = {}
 
 
 async def create_solana_wallet() -> Tuple[str, str]:
@@ -106,15 +112,14 @@ def is_valid_private_key(private_key: str) -> bool:
     try:
         # Проверяем длину приватного ключа Solana
         # Если длина ключа 64 символа, это hex-представление
-        if len(private_key) == 64:
+        if len(private_key) == PRIVATE_KEY_HEX_LENGTH:
             # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
             # а затем создание объекта Keypair из этих байтов.
             # Этот метод используется для создания объекта Keypair, который может быть использован для
             # подписывания транзакций или выполнения других операций, связанных с приватным ключом.
             Keypair.from_seed(bytes.fromhex(private_key))
-            # Keypair.from_bytes(bytes.fromhex(private_key))
         # Если длина ключа 32 символа, это представление в бинарном формате
-        elif len(private_key) == 32:
+        elif len(private_key) == PRIVATE_KEY_BINARY_LENGTH:
             # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
             # а затем создание объекта Keypair из этих байтов.
             # Этот метод используется для создания объекта Keypair из приватного ключа с использованием его seed.
@@ -130,10 +135,21 @@ def is_valid_private_key(private_key: str) -> bool:
 
 
 def is_valid_amount(amount: str | int | float) -> bool:
+    """
+        Checks if the value is a valid amount.
+
+        Arguments:
+        amount (str | int | float): The value of the amount to be checked.
+
+        Returns:
+        bool: True if the amount value is valid, False otherwise.
+    """
+    # Проверяем, является ли аргумент amount экземпляром int или float.
     if isinstance(amount, (int, float)):
         return True
+        # Если amount не является int или float, пытаемся преобразовать его в float.
     try:
-        float_amount = float(amount)
+        float(amount)
         return True
     except ValueError:
         return False
@@ -155,7 +171,7 @@ async def get_sol_balance(wallet_addresses, client):
         if isinstance(wallet_addresses, str):
             balance = (await client.get_balance(Pubkey.from_string(wallet_addresses))).value
             # Преобразование лампортов в SOL
-            sol_balance = balance / 10 ** 9
+            sol_balance = balance / LAMPORT_TO_SOL_RATIO
             logger.debug(f"wallet_address: {wallet_addresses}, balance: {balance}, sol_balance: {sol_balance}")
             return sol_balance
         # Если передан список адресов кошельков
@@ -164,7 +180,7 @@ async def get_sol_balance(wallet_addresses, client):
             for address in wallet_addresses:
                 balance = (await client.get_balance(Pubkey.from_string(address))).value
                 # Преобразование лампортов в SOL
-                sol_balance = balance / 10 ** 9
+                sol_balance = balance / LAMPORT_TO_SOL_RATIO
                 sol_balances.append(sol_balance)
             return sol_balances
         else:
@@ -218,7 +234,7 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
                 from_pubkey=sender_keypair.pubkey(),
                 to_pubkey=Pubkey.from_string(recipient_address),
                 # Количество лампортов для перевода, преобразованное из суммы SOL.
-                lamports=int(amount * 10 ** 9),
+                lamports=int(amount * LAMPORT_TO_SOL_RATIO),
             )
         )
     )
@@ -238,30 +254,115 @@ async def transfer_token(sender_address: str, sender_private_key: str, recipient
     return False
 
 
-async def get_transaction_history(wallet_address, client):
+def decode_solana_address(encoded_address: str) -> Optional[Any]:
+    """
+        Decodes a Solana address from Base58 format.
+
+        Arguments:
+        encoded_address (str): The encoded Solana address in Base58 format.
+
+        Returns:
+        str or None: The decoded Solana address as a string or None in case of error.
+    """
     try:
+        # Декодируем адрес из формата Base58
+        decoded_bytes = base58.b58decode(encoded_address)
+        # Преобразуем байтовые данные в строку
+        decoded_address = decoded_bytes.decode('utf-8')
+        return decoded_address
+    except Exception as e:
+        print(f"Failed to decode Solana address: {e}")
+        return None
+
+
+async def get_transaction_history(wallet_address: str) -> list[dict]:
+    """
+        Retrieves transaction history for a given Solana wallet address.
+
+        Arguments:
+        wallet_address (str): The Solana wallet address.
+
+        Returns:
+        list[dict]: A list of dictionaries representing transactions in JSON format.
+    """
+    try:
+        # Проверяем, были ли уже получены данные для этого адреса кошелька и время их сохранения
+        cached_data = transaction_history_cache.get(wallet_address)
+        if cached_data is not None:
+            transaction_history, cache_time = cached_data
+            # Проверяем, не истекло ли время действия кеша
+            if time.time() - cache_time <= TRANSACTION_HISTORY_CACHE_DURATION:
+                # Возвращаем кэшированные данные
+                return transaction_history
+
         # Получение истории транзакций кошелька
-        signature_statuses = (
-            await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)
-        ).value
         transaction_history = []
 
-        # Проходим по всем статусам подписей в результате
-        for signature_status in signature_statuses:
-            # Получаем транзакцию по подписи
-            transaction = (await client.get_transaction(signature_status.signature)).value
-            # Добавляем полученную транзакцию в историю транзакций
-            transaction_history.append(transaction)
+        # Декодируем строку Base58 в байтовый формат
+        pubkey_bytes = base58.b58decode(wallet_address)
+        # Создаем объект Pubkey из байтового представления
+        pubkey = Pubkey(pubkey_bytes)
 
-        # Возвращаем список истории транзакций
-        return transaction_history
+        while True:
+            try:
+                # Получение истории транзакций для текущего адреса
+                signature_statuses = (
+                    await http_client.get_signatures_for_address(pubkey)
+                ).value
+
+                # Проходим по всем статусам подписей в результате
+                for signature_status in signature_statuses:
+                    # Получаем транзакцию по подписи
+                    transaction = (await http_client.get_transaction(signature_status.signature)).value
+                    # Добавляем полученную транзакцию в историю транзакций
+                    transaction_history.append(transaction)
+
+                # Кэшируем полученные данные для последующих запросов
+                transaction_history_cache[wallet_address] = (transaction_history, time.time())
+
+                # Возвращаем список истории транзакций
+                return transaction_history
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429:
+                    # Если получена ошибка "429 Too Many Requests", ждем некоторое время и повторяем запрос
+                    await asyncio.sleep(10)  # Подождать 10 секунд и повторить запрос
+                else:
+                    raise e
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
-        # Логирование ошибки
-        logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
-        # Дополнительная обработка ошибки, если необходимо
-        raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+        logger.error(
+            f"Failed to get transaction history for Solana wallet {wallet_address}: {e}\n{detailed_error_traceback}")
+        raise Exception(
+            f"Failed to get transaction history for Solana wallet {wallet_address}: {e}\n{detailed_error_traceback}")
+
+
+#############################################################33
+# async def get_transaction_history(wallet_address, client):
+#     try:
+#         # Получение истории транзакций кошелька
+#         signature_statuses = (
+#             await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)
+#         ).value
+#         transaction_history = []
+
+#         # Проходим по всем статусам подписей в результате
+#         for signature_status in signature_statuses:
+#             # Получаем транзакцию по подписи
+#             transaction = (await client.get_transaction(signature_status.signature)).value
+#             # Добавляем полученную транзакцию в историю транзакций
+#             transaction_history.append(transaction)
+
+#         # Возвращаем список истории транзакций
+#         return transaction_history
+
+#     except Exception as e:
+#         detailed_error_traceback = traceback.format_exc()
+#         # Логирование ошибки
+#         logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+#         # Дополнительная обработка ошибки, если необходимо
+#         raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
 
 
 ######################################

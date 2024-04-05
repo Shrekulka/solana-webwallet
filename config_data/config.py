@@ -4,14 +4,31 @@ from typing import Union
 
 from pydantic.v1 import BaseSettings, SecretStr
 
+# Константа для определения URL-адреса узла Solana в тестовой сети Devnet
+SOLANA_NODE_URL = "https://api.testnet.solana.com"
+# SOLANA_NODE_URL = "https://api.devnet.solana.com"
+
+# Константа для определения соотношения между лампортами и SOL. 1 SOL = 10^9 лампортов.
+LAMPORT_TO_SOL_RATIO = 10 ** 9
+
+# Константа для определения длины шестнадцатеричного представления приватного ключа в символах.
+PRIVATE_KEY_HEX_LENGTH = 64
+
+# Константа для определения длины двоичного представления приватного ключа в байтах.
+PRIVATE_KEY_BINARY_LENGTH = 32
+
+# Константа, определяющая длительность существования кеша для истории транзакций (в секундах).
+# Здесь установлено значение 3600 секунд (1 час).
+TRANSACTION_HISTORY_CACHE_DURATION = 3600
+
 
 class Settings(BaseSettings):
-    db_name: str                      # Название базы данных
-    db_host: str                      # URL-адрес базы данных
-    db_user: str                      # Имя пользователя базы данных
-    db_password: SecretStr            # Пароль к базе данных
-    db_engine: str                    # движок бд
-    bot_token: SecretStr              # Токена бота
+    db_engine: str  # движок бд
+    db_name: str  # Название базы данных
+    db_host: str  # URL-адрес базы данных
+    db_user: str  # Имя пользователя базы данных
+    db_password: SecretStr  # Пароль к базе данных
+    bot_token: SecretStr  # Токена бота
     admin_ids: Union[list[int], int]  # Список id администраторов бота
 
     class Config:

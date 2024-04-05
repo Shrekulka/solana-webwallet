@@ -24,7 +24,6 @@ async def process_unexpected_message(message: Message) -> None:
         None
     """
     # Выводим апдейт в терминал
-    # logger.info(message.model_dump_json(indent=4, exclude_none=True))
     try:
         # Проверяем, может ли бот редактировать сообщения
         if message.chat.type == 'private':  # Проверяем, что чат является приватным
