@@ -118,7 +118,7 @@ START_MESSAGES = {
               "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
               "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
-              "<i>https://api.devnet.solana.com</i>"
+              "<i>https://api.testnet.solana.com</i>"
               "\n\n❓ To view the list of available commands, type /help 😊",
 }
 
