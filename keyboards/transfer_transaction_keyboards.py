@@ -1,39 +1,49 @@
 # solana_wallet_telegram_bot/keyboards/transfer_transaction_keyboards.py
 
-from typing import List
+import time
+from typing import List, Dict
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from config_data.config import TRANSACTION_HISTORY_CACHE_DURATION
 from external_services.solana.solana import get_sol_balance, http_client
 from lexicon.lexicon_en import LEXICON
 from models.models import SolanaWallet
 
-# Словарь для кэширования балансов кошельков
-wallet_balances_cache = {}
+# Создание пустого словаря для кэширования балансов кошельков
+wallet_balances_cache: Dict[str, float] = {}
+# Инициализация времени последнего обновления кэша
+cache_last_updated: float = 0.0
 
 
 async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboardMarkup:
     """
-    Asynchronously generates a keyboard with buttons for each wallet.
+        Function for creating a keyboard with user wallets.
 
-    Args:
-        user_wallets (List[SolanaWallet]): List of user's wallets.
+        Args:
+            user_wallets (List[SolanaWallet]): The list of user wallets.
 
-    Returns:
-        InlineKeyboardMarkup: Keyboard with buttons for each wallet.
+        Returns:
+            InlineKeyboardMarkup: The keyboard with wallet buttons.
     """
-    global wallet_balances_cache  # Для доступа к глобальному кэшу
+    global wallet_balances_cache, cache_last_updated
 
-    # Проверяем кэш на наличие балансов кошельков
-    if not wallet_balances_cache:
-        # Если кэш пуст, запрашиваем балансы для всех кошельков одним запросом
+    # Получаем текущее время
+    current_time = time.time()
+
+    # Проверяем, нужно ли обновить кэш:
+    # Если прошло больше времени, чем TRANSACTION_HISTORY_CACHE_DURATION с момента последнего обновления кэша,
+    # или кэш пустой, то обновляем его
+    if (current_time - cache_last_updated > TRANSACTION_HISTORY_CACHE_DURATION) or not wallet_balances_cache:
+        # Формируем список адресов кошельков пользователя
         wallet_addresses = [wallet.wallet_address for wallet in user_wallets]
+        # Получаем балансы кошельков асинхронно
         balances = await get_sol_balance(wallet_addresses, http_client)
-
-        # Заполняем кэш результатами запроса
+        # Создаем словарь с парами "адрес кошелька - баланс" и обновляем кэш балансов
         wallet_balances_cache = dict(zip(wallet_addresses, balances))
+        # Обновляем время последнего обновления кэша
+        cache_last_updated = current_time
 
-    # Создаем список кнопок для каждого кошелька
     wallet_buttons = []  # Пустой список кнопок
     count = 1  # Инициализация счетчика
 
@@ -56,11 +66,10 @@ async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboar
         # Создаем текст кнопки, объединяя строки информации о кошельке с помощью переноса строки
         wallet_button_text = '\n'.join(wallet_info_lines)
 
-        # Создаем инлайн-кнопку для кошелька с помощью InlineKeyboardButton
+        # Создаем кнопку для кошелька с текстом, содержащим информацию о кошельке, и callback_data,
+        # содержащим адрес кошелька
         wallet_button = InlineKeyboardButton(
-            # Устанавливаем текст кнопки как сформированную информацию о кошельке
             text=wallet_button_text,
-            # Устанавливаем callback_data, включающий в себя префикс "wallet_address" и адрес кошелька
             callback_data=f"wallet_address:{wallet.wallet_address}"
         )
 
@@ -69,13 +78,18 @@ async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboar
         # Увеличиваем счетчик
         count += 1
 
-    # Добавляем кнопку "Вернуться в главное меню"
+    # Создаем кнопку для возврата в главное меню
     return_to_main_menu_button = InlineKeyboardButton(
-        text=LEXICON["button_back"],
-        callback_data="callback_button_back"
+        text=LEXICON["button_back"],          # Текст кнопки задается из словаря LEXICON
+        callback_data="callback_button_back"  # Указываем данные обратного вызова для кнопки
     )
+
+    # Добавляем кнопку в список кнопок, каждая кнопка должна находиться в отдельном списке для формирования столбцов в
+    # клавиатуре
     wallet_buttons.append([return_to_main_menu_button])
 
-    # Создаем клавиатуру из кнопок
+    # Создаем клавиатуру с кнопками, используя список кнопок
     wallet_keyboard = InlineKeyboardMarkup(inline_keyboard=wallet_buttons)
-    return wallet_keyboard  # Возвращаем созданную клавиатуру
+
+    # Возвращаем сформированную клавиатуру
+    return wallet_keyboard

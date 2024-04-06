@@ -1,8 +1,8 @@
-# solana_wallet_telegram_bot/external_services/solana/solana.py
-import asyncio
+# solana-webwallet/external_services/solana/solana.py
+
 import time
 import traceback
-from typing import Tuple, Dict, List, Union, Optional, Any
+from typing import Tuple, Dict, List, Optional, Any
 
 import base58
 import httpx
@@ -13,11 +13,11 @@ from solders.pubkey import Pubkey
 from solders.system_program import transfer, TransferParams
 from solders.transaction_status import TransactionConfirmationStatus
 
-from config_data.config import SOLANA_NODE_URL, LAMPORT_TO_SOL_RATIO, PRIVATE_KEY_HEX_LENGTH, PRIVATE_KEY_BINARY_LENGTH, \
-    TRANSACTION_HISTORY_CACHE_DURATION
+from config_data.config import (SOLANA_NODE_URL, LAMPORT_TO_SOL_RATIO, PRIVATE_KEY_HEX_LENGTH,
+                                PRIVATE_KEY_BINARY_LENGTH, TRANSACTION_HISTORY_CACHE_DURATION)
 from logger_config import logger
 
-# Создание клиента для подключения к тестовой сети Devnet
+# Создание клиента для подключения к тестовой сети
 http_client = AsyncClient(SOLANA_NODE_URL)
 
 # Создаем словарь для кэширования результатов запросов истории транзакций
@@ -118,6 +118,7 @@ def is_valid_private_key(private_key: str) -> bool:
             # Этот метод используется для создания объекта Keypair, который может быть использован для
             # подписывания транзакций или выполнения других операций, связанных с приватным ключом.
             Keypair.from_seed(bytes.fromhex(private_key))
+
         # Если длина ключа 32 символа, это представление в бинарном формате
         elif len(private_key) == PRIVATE_KEY_BINARY_LENGTH:
             # Преобразование строки, содержащей приватный ключ, в байтовый формат с помощью метода fromhex,
@@ -325,8 +326,8 @@ async def get_transaction_history(wallet_address: str) -> list[dict]:
 
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429:
-                    # Если получена ошибка "429 Too Many Requests", ждем некоторое время и повторяем запрос
-                    await asyncio.sleep(10)  # Подождать 10 секунд и повторить запрос
+                    # Если получена ошибка "429 Too Many Requests", вернем None
+                    return []
                 else:
                     raise e
 
@@ -334,61 +335,4 @@ async def get_transaction_history(wallet_address: str) -> list[dict]:
         detailed_error_traceback = traceback.format_exc()
         logger.error(
             f"Failed to get transaction history for Solana wallet {wallet_address}: {e}\n{detailed_error_traceback}")
-        raise Exception(
-            f"Failed to get transaction history for Solana wallet {wallet_address}: {e}\n{detailed_error_traceback}")
-
-
-#############################################################33
-# async def get_transaction_history(wallet_address, client):
-#     try:
-#         # Получение истории транзакций кошелька
-#         signature_statuses = (
-#             await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)
-#         ).value
-#         transaction_history = []
-
-#         # Проходим по всем статусам подписей в результате
-#         for signature_status in signature_statuses:
-#             # Получаем транзакцию по подписи
-#             transaction = (await client.get_transaction(signature_status.signature)).value
-#             # Добавляем полученную транзакцию в историю транзакций
-#             transaction_history.append(transaction)
-
-#         # Возвращаем список истории транзакций
-#         return transaction_history
-
-#     except Exception as e:
-#         detailed_error_traceback = traceback.format_exc()
-#         # Логирование ошибки
-#         logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
-#         # Дополнительная обработка ошибки, если необходимо
-#         raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
-
-
-######################################
-# async def get_transaction_history(wallet_address, client):
-#     try:
-#         # Инициализация клиента
-#         async with AsyncClient('https://api.testnet.solana.com') as client:
-#             # Получение истории транзакций кошелька
-#             signature_statuses = (
-#                 await client.get_signatures_for_address(Pubkey.from_string(wallet_address), limit=1)
-#             ).value
-#             transaction_history = []
-
-#             # Проходим по всем статусам подписей в результате
-#             for signature_status in signature_statuses:
-#                 # Получаем транзакцию по подписи
-#                 transaction = (await client.get_transaction(signature_status.signature)).value
-#                 # Добавляем полученную транзакцию в историю транзакций
-#                 transaction_history.append(transaction)
-
-#             # Возвращаем список истории транзакций
-#             return transaction_history
-
-#     except Exception as e:
-#         detailed_error_traceback = traceback.format_exc()
-#         # Логирование ошибки
-#         logger.error(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
-#         # Дополнительная обработка ошибки, если необходимо
-#         raise Exception(f"Failed to get transaction history for Solana wallet: {e}\n{detailed_error_traceback}")
+        return []

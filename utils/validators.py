@@ -1,25 +1,50 @@
-# solana_wallet_telegram_bot/utils/validators.py
+# solana-webwallet/utils/validators.py
 
 import re
 
 
-def is_valid_wallet_name(name):
+def is_valid_wallet_name(name: str) -> bool:
+    """
+        Checks the validity of a wallet name.
+
+        Args:
+            name (str): The name of the wallet.
+
+        Returns:
+            bool: True if the wallet name is valid, False otherwise.
+    """
+    # Создаем регулярное выражение для проверки имени кошелька.
+    # ^ - начало строки
+    # [\w\d\s\-_]+ - один или более символов, которые могут быть буквами, цифрами, пробелами, дефисами или
+    # подчеркиваниями
+    # $ - конец строки
     pattern = r'^[\w\d\s\-_]+$'
+    # Проверка соответствия регулярному выражению
     return bool(re.match(pattern, name))
 
 
-def is_valid_wallet_description(description):
+def is_valid_wallet_description(description: str) -> bool:
+    """
+        Checks the validity of a wallet description.
+
+        Args:
+            description (str): The description of the wallet.
+
+        Returns:
+            bool: True if the wallet description is valid, False otherwise.
+    """
     # Проверка наличия описания
     if not description.strip():
-        return True
+        return False
 
     # Проверка максимальной длины описания (например, 500 символов)
-    if len(description) > 500:
+    elif len(description) > 500:
         return False
 
     # Регулярное выражение для проверки допустимых символов в описании
     # В данном примере разрешены буквы, цифры, пробелы, знаки препинания и некоторые специальные символы
-    pattern = r'^[\w\d\s\-_,.:;!?]*$'
+    else:
+        pattern = r'^[\w\d\s\-_,.:;!?]*$'
 
-    # Проверка соответствия регулярному выражению
-    return bool(re.match(pattern, description))
+        # Проверка соответствия регулярному выражению
+        return bool(re.match(pattern, description))

@@ -93,7 +93,7 @@ class SolanaWallet(Base):
         session.add(wallet)
         # Сохранение изменений в базе данных
         await session.commit()
-        # Возвращение созданного кошелька
+        # Возвращение созданного кошелька и приватного ключа
         return wallet, private_key
 
     @classmethod

@@ -1,36 +1,37 @@
-# solana_wallet_telegram_bot/states/states.py
+# solana-webwallet/states/states.py
 
 from aiogram.fsm.state import StatesGroup, State
 
 
-# Создаем класс, наследуемый от StatesGroup, для группы состояний нашей FSM
 class FSMWallet(StatesGroup):
     """
-        Class defining the finite state machine states for wallet interaction.
+        Class of states for managing the wallet interaction process.
 
         Attributes:
-            choose_action: State for choosing wallet action.
-            add_name_wallet: State for adding wallet name.
-            add_description_wallet: State for adding wallet description.
-            connect_wallet_address: State for connecting wallet by address.
-            connect_wallet_private_key: State for connecting wallet by private key.
-            choose_sender_wallet:
-            transfer_recipient_address:
-            transfer_amount:
+            create_wallet_add_name (State): State for adding the name of a new wallet.
+            create_wallet_add_description (State): State for adding the description of a new wallet.
+            connect_wallet_add_address (State): State for adding the address to connect an existing wallet.
+            connect_wallet_add_name (State): State for adding the name of an existing wallet.
+            connect_wallet_add_description (State): State for adding the description of an existing wallet.
+            transfer_choose_sender_wallet (State): State for choosing the sender's wallet during token transfer.
+            transfer_sender_private_key (State): State for inputting the sender's private key.
+            confirm_save_new_wallet (State): State for confirming the saving of a new wallet.
+            transfer_recipient_address (State): State for inputting the recipient's wallet address during token transfer
+            transfer_amount (State): State for inputting the amount of tokens to transfer.
+            choose_transaction_wallet (State): State for choosing the wallet to view transactions.
     """
-    # Состояние ожидания выбора действия с кошельком
 
-    create_wallet_add_name = State()
-    create_wallet_add_description = State()
+    create_wallet_add_name = State()          # Состояние добавления имени нового кошелька
+    create_wallet_add_description = State()   # Состояние добавления описания нового кошелька
 
-    connect_wallet_add_address = State()  # Состояние подключения кошелька по адресу
-    connect_wallet_add_name = State()  # Состояние добавления имени кошелька
-    connect_wallet_add_description = State()  # Состояние добавления описания кошелька
+    connect_wallet_add_address = State()      # Состояние добавления адреса для подключения существующего кошелька
+    connect_wallet_add_name = State()         # Состояние добавления имени существующего кошелька
+    connect_wallet_add_description = State()  # Состояние добавления описания существующего кошелька
 
-    transfer_choose_sender_wallet = State()  # Состояние выбора кошелька отправителя
-    transfer_sender_private_key = State()  # Состояние ввода приватного ключа отправителя
+    transfer_choose_sender_wallet = State()   # Состояние выбора кошелька отправителя при переводе токенов
+    transfer_sender_private_key = State()     # Состояние ввода приватного ключа отправителя
 
-    confirm_save_new_wallet = State()
-    transfer_recipient_address = State()  # Состояние ввода адреса кошелька получателя
-    transfer_amount = State()  # Состояние ввода количества токенов для передачи
-    choose_transaction_wallet = State()  # Состояние выбора кошелька для транзакций
+    confirm_save_new_wallet = State()         # Состояние подтверждения сохранения нового кошелька
+    transfer_recipient_address = State()      # Состояние ввода адреса кошелька получателя при переводе токенов
+    transfer_amount = State()                 # Состояние ввода количества токенов для передачи
+    choose_transaction_wallet = State()       # Состояние выбора кошелька для просмотра транзакций

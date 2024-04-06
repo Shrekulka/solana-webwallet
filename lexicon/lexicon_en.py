@@ -1,6 +1,35 @@
 # solana_wallet_telegram_bot/pylexicon/lexicon_en.py
 
 
+# Сообщения для старта и справки
+START_MESSAGES = {
+    "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
+              "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n\n"
+              "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
+              "<i>{node}</i>"
+              "\n\n❓ To view the list of available commands, type /help 😊",
+}
+
+# Справочное сообщение бота
+HELP_MESSAGES = {
+    "/help": "<b>Description of the bot functionality:</b>\n\n"
+             "🔑 <b>Create wallet:</b>\n\n<i>Allows you to create a new Solana wallet."
+             "After creating the wallet, you will receive a private key which you should securely store."
+             "This private key is essential for any transactions or interactions with your wallet.</i>\n\n"
+             "🔗<b> Connect wallet:</b>\n\n<i>Allows you to connect an existing Solana wallet to your account."
+             "You will be prompted to enter the wallet address, name, and optional description.</i>\n\n"
+             "💰<b> Show balance:</b>\n\n<i>Allows you to check the balance of all your connected wallets.</i>\n\n"
+             "📲<b> Transfer token:</b>\n\n<i>Transfers SOL between your Solana wallets. Select a sender, enter the "
+             "key, address, and amount. Once confirmed, the tokens will be transferred. Note that for a successful "
+             "transfer, the sender must have a sufficient balance and be cautious when entering your private key.</i>"
+             "\n\n"
+             "<b>📜 View transaction history:</b>\n\n<i>Allows you to view the transaction history for one of your "
+             "registered Solana wallets. After selecting the desired wallet from the list, the bot will display the "
+             "history of incoming and outgoing transactions for this wallet, including details of each transaction "
+             "such as the unique transaction ID, sender and recipient addresses, and the transaction amount.</i>"
+}
+
+# Кнопки главного меню
 MAIN_MENU_BUTTONS: dict[str, str] = {
     "create_wallet": "🔑 Create wallet",
     "connect_wallet": "🔗 Connect wallet",
@@ -8,26 +37,23 @@ MAIN_MENU_BUTTONS: dict[str, str] = {
     "token_price": "💹 Show token price",
     "token_buy": "💸 Buy token",
     "token_sell": "💳 Sell token",
-    # "token_transfer": "📲 Transfer token",
-    "token_transfer": "📲 Send token",
+    "token_transfer": "📲 Transfer token",
     "transaction": "📜 View transaction history",
     "delete_wallet": "🗑️ Delete wallet",
     "settings": "⚙️ Crypto wallet settings",
     "donate": "💝 Donate to the team",
 }
 
+# Дополнительные кнопки
 OTHER_BUTTONS: dict[str, str] = {
     "button_back": "⬅️ back",
     "back_to_main_menu": "<b>🏠 Main menu</b>\n\n"
-                         "To view the list of available commands, type /help 😊",
+                         "<i>To view the list of available commands, type /help 😊</i>",
+    "save_wallet": "<i>Yes</i>",
+    "cancel": "<i>No</i>",
 }
 
-GENERAL_MESSAGE: dict[str, str] = {
-    "unexpected_input": "❌ <b>Unexpected input</b>\n\n"
-                        "Please select an action from the menu\n"
-                        "or enter one of the available commands,\n"
-                        "such as /start or /help.",
-}
+# Сообщения для создания кошелька
 CREATE_WALLET_MESSAGE = {
     "create_name_wallet": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
@@ -62,25 +88,6 @@ BALANCE_MESSAGE = {
     "balance_success": "<b>💰 Your wallet balance:</b> {balance} SOL"
 }
 
-# Сообщения для 'connect_wallet'
-TOKEN_PRICE_MESSAGE = {
-    "token_price": "Price token"
-}
-
-# Сообщения для обработки команды buy_token
-TOKEN_BUY_MESSAGE = {
-    "input_prompt": "Введите адрес мята токена и количество SOL для покупки "
-                    "через пробел (например, 'TokenMintAddress 1.5')",
-    "buy_success": "Токены успешно куплены на {amount} SOL"
-}
-
-# Сообщения для обработки команды sell_token
-TOKEN_SELL_MESSAGES = {
-    "input_prompt": "Введите адрес мята токена и количество токенов для "
-                    "продажи через пробел (например, 'TokenMintAddress 100')",
-    "sell_success": "Токены успешно проданы на {amount} SOL"
-}
-
 # Сообщения для переноса
 TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n\n"
@@ -88,20 +95,18 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
                                          "should be at least 0.00089784 SOL",
     "transfer_amount_prompt": "<b>💸 Enter the amount of tokens to transfer:</b>",
     "invalid_wallet_address": "<b>❌ Invalid wallet address.</b>",
-    "transfer_successful": "<b>✅ Transfer of {amount} SOL\nto {recipient}\nsuccessful.</b>",
-    "transfer_not_successful": "<b>❌ Failed to transfer {amount} SOL to {recipient}.</b>",
+    "transfer_successful": "<b>✅ Transfer of {amount} SOL to\n\n<i>{recipient}</i>\n\nsuccessful.</b>",
+    "transfer_not_successful": "<b>❌ Failed to transfer {amount} SOL to\n\n<i>{recipient}.</i></b>",
     "insufficient_balance": "<b>❌ Insufficient funds in your wallet for this transfer.</b>",
     "insufficient_balance_recipient": "<b>❌ The recipient's balance\nshould be at least 0.00089784 Sol.</b>",
     "no_wallet_connected": "<b>🔗 Please connect your wallet before transferring tokens.</b>",
-    "list_sender_wallets": "<b>📋 Your wallet list:</b>\n\nClick on the relevant wallet:",
+    "list_sender_wallets": "<b>📋 Your wallet list:</b>\n\n<i>Click on the relevant wallet:</i>",
     "choose_sender_wallet": "<b>🔑 Enter your wallet address:</b>",
     "invalid_wallet_choice": "<b>❌ Invalid wallet choice.</b>",
     "no_wallets_connected": "<b>❌ You don't have any connected wallets.\n"
-                            "Connect a wallet before transferring tokens.</b>",
+                            "<i>Connect a wallet before transferring tokens.</i></b>",
     "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
     "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
-    "save_wallet": "<i>Yes</i>",
-    "cancel": "<i>No</i>",
     "invalid_amount": "<b>❌ Invalid amount.</b>",
     "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
     "invalid_private_key": "<b>❌ Invalid private key.</b>",
@@ -113,50 +118,18 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
                         "<b>💰 Amount:</b> {amount} lamports"
 }
 
-# # Сообщения для старта и справки
-# START_MESSAGES = {
-#     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
-#               "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
-#               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
-#               "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
-#               "<i>https://api.testnet.solana.com</i>"
-#               "\n\n❓ To view the list of available commands, type /help 😊",
-# }
-
-START_MESSAGES = {
-    "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
-              "<i>This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
-              "<i>💳 Here you can store, and send using your wallet.</i>\n"
-            #   "<i>Here you can buy, sell, store, and pay using your wallet.</i>\n"
-            #   "\nTo view the list of available commands, type /help 😊"
-            #   "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
-            #   "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
-              "\n<i>🤖 The bot is currently using the Solana development network API:</i>\n"
-            #   "<i>https://api.devnet.solana.com</i>"
-              "<i>https://api.testnet.solana.com</i>"
-              "\n\n❓ To view the list of available commands, type /help 😊",
-}
-
-
-# Справочное сообщение бота
-HELP_MESSAGES = {
-    "/help": "<b>Available commands:</b>\n\n"
-             "💼 <b>create</b> - create new wallet...\n\n"
-             "💼 <b>connect</b> - connect wallet...\n\n"
-             "💰 <b>balance</b> - show balance...\n\n"
-             "💸 <b>send</b> - send coins...\n\n"
-             "📜 <b>transactions</b> - view transaction history...\n\n"
-            #  "📥 <b>receive</b> - receive coins...\n\n"
-            #  "🗑️ <b>delete_wallet</b> - delete wallet...\n"
-}
-UNKNOWN_MESSAGE = {
+# Неизвестный ввод сообщения
+UNKNOWN_MESSAGE_INPUT = {
     "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
                           "Please use one of the available commands\n"
-                          "or options from the menu."
+                          "or options from the menu.",
+    "unexpected_input": "❌ <b>Unexpected input</b>\n\n"
+                        "Please select an action from the menu\n"
+                        "or enter one of the available commands,\n"
+                        "such as /start or /help.",
 }
 
 # Объединение всех сообщений в словарь LEXICON
-LEXICON: dict[str, str] = {**GENERAL_MESSAGE, **CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE,
-                           **BALANCE_MESSAGE, **TOKEN_PRICE_MESSAGE, **TOKEN_BUY_MESSAGE, **TOKEN_SELL_MESSAGES,
-                           **MAIN_MENU_BUTTONS, **TOKEN_TRANSFER_TRANSACTION_MESSAGE, **START_MESSAGES, **HELP_MESSAGES,
-                           **UNKNOWN_MESSAGE}
+LEXICON: dict[str, str] = {**CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE, **HELP_MESSAGES,
+                           **BALANCE_MESSAGE, **MAIN_MENU_BUTTONS, **START_MESSAGES, **UNKNOWN_MESSAGE_INPUT,
+                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE}

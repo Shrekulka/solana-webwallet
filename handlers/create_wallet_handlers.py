@@ -1,4 +1,5 @@
 # solana_wallet_telegram_bot/handlers/create_wallet_handlers.py
+
 import traceback
 
 from aiogram import Router
@@ -82,6 +83,16 @@ async def process_invalid_wallet_name(message: Message, state: FSMContext) -> No
 @create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_description),
                               lambda message: message.text and is_valid_wallet_description(message.text))
 async def process_wallet_description(message: Message, state: FSMContext) -> None:
+    """
+        Handles the user input of the wallet description during creation.
+
+        Args:
+            message (Message): The user message containing the wallet description.
+            state (FSMContext): The state context for managing chat states.
+
+        Returns:
+            None
+    """
     try:
         # Обновляем данные состояния, добавляя введенное описание
         await state.update_data(description=message.text)

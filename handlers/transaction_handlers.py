@@ -1,18 +1,22 @@
 # solana_wallet_telegram_bot/handlers/transaction_handlers.py
+import asyncio
 import traceback
 
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery
 
 from external_services.solana.solana import get_transaction_history
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
+from services.wallet_service import format_transaction_message
 from states.states import FSMWallet
+from config_data.config import SOLANA_NODE_URL
 
-# Инициализируем роутер уровня модуля
+# Инициализируем роутер уровня модуляz
 transaction_router: Router = Router()
 
 
@@ -22,46 +26,36 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
     """
         Handles the button press to select a wallet address for fetching transaction history.
 
-        Arguments:
-        callback (CallbackQuery): The callback query object.
-        state (FSMContext): The state context of the finite state machine.
+        Args:
+            callback (CallbackQuery): The callback query object.
+            state (FSMContext): The state context of the finite state machine.
 
         Returns:
-        None
+            None
     """
     try:
         # Извлекаем адрес кошелька из callback_data
         wallet_address = callback.data.split(":")[1]
-        logger.debug(f"Wallet address: {wallet_address}")
+        transaction_history = []
 
-        transaction_history = await get_transaction_history(wallet_address)
-        logger.debug(f"Transaction history: {transaction_history}")
+        if "api.devnet.solana.com" not in SOLANA_NODE_URL:
+            # Получаем историю транзакций кошелька по его адресу.
+            transaction_history = await get_transaction_history(wallet_address)
 
         if transaction_history:
-            # Формируем сообщения для каждой транзакции
-            for transaction in transaction_history[:5]:
-                transaction_message = LEXICON["transaction_info"].format(
-                    transaction_id='{}...{}'.format(
-                        str(transaction.transaction.transaction.signatures[0])[:4],
-                        str(transaction.transaction.transaction.signatures[0])[-4:],
-                    ),
-                    # Отправитель транзакции - первый аккаунт в списке аккаунтов сообщения.
-                    sender='{}...{}'.format(
-                        str(transaction.transaction.transaction.message.account_keys[0])[:4],
-                        str(transaction.transaction.transaction.message.account_keys[0])[-4:],
-                    ),
-                    # Получатель транзакции - второй аккаунт в списке аккаунтов сообщения.
-                    recipient='{}...{}'.format(
-                        str(transaction.transaction.transaction.message.account_keys[1])[:4],
-                        str(transaction.transaction.transaction.message.account_keys[1])[-4:],
-                    ),
-                    # Разница в балансе отправителя до и после транзакции, выраженная в SOL.
-                    amount=transaction.transaction.meta.pre_balances[0] - transaction.transaction.meta.post_balances[0]
-                )
+            # Создаем список задач на форматирование сообщений о транзакциях
+            transaction_tasks = [format_transaction_message(transaction) for transaction in transaction_history]
 
-                # Отправляем каждую транзакцию в отдельном сообщении
-                await callback.message.answer(transaction_message)
+            # Используем asyncio.gather для параллельной обработки транзакций
+            transaction_messages = await asyncio.gather(*transaction_tasks)
+
+            # Объединяем все сообщения в одну строку с разделителем '\n\n'
+            combined_message = '\n\n'.join(transaction_messages)
+
+            # Отправляем объединенное сообщение
+            await callback.message.answer(combined_message)
         else:
+            # Отправляем ответ пользователю с сообщением о пустой истории транзакций
             await callback.answer(LEXICON["empty_history"], show_alert=True, reply_markup=None)
 
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
@@ -72,5 +66,8 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
         # Отправляем сообщение пользователю о недоступности сервера и просьбе повторить запрос позже
         await callback.answer(LEXICON["server_unavailable"], show_alert=True, reply_markup=None)
         # Возвращаем пользователя в главное меню
-        await callback.message.edit_text(LEXICON["back_to_main_menu"])
-        await callback.message.edit_reply_markup(reply_markup=main_keyboard)
+        # await callback.message.delete()
+        await callback.message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
+        await state.set_state(default_state)
+
+        await callback.answer()
