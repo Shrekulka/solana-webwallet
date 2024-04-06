@@ -126,11 +126,12 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
 START_MESSAGES = {
     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
               "<i>This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
-              "<i>Here you can buy, sell, store, and pay using your wallet.</i>\n"
-              "\n\nTo view the list of available commands, type /help 😊"
-              "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
-              "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
-              "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
+              "<i>💳 Here you can store, and send using your wallet.</i>\n"
+            #   "<i>Here you can buy, sell, store, and pay using your wallet.</i>\n"
+            #   "\nTo view the list of available commands, type /help 😊"
+            #   "<i>🌕 This bot is designed to work with a wallet on the Solana blockchain.</i>\n"
+            #   "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n"
+              "\n<i>🤖 The bot is currently using the Solana development network API:</i>\n"
             #   "<i>https://api.devnet.solana.com</i>"
               "<i>https://api.testnet.solana.com</i>"
               "\n\n❓ To view the list of available commands, type /help 😊",
@@ -140,11 +141,13 @@ START_MESSAGES = {
 # Справочное сообщение бота
 HELP_MESSAGES = {
     "/help": "<b>Available commands:</b>\n\n"
+             "💼 <b>create</b> - create new wallet...\n\n"
+             "💼 <b>connect</b> - connect wallet...\n\n"
              "💰 <b>balance</b> - show balance...\n\n"
-             "📜 <b>transactions</b> - view transaction history...\n\n"
              "💸 <b>send</b> - send coins...\n\n"
-             "📥 <b>receive</b> - receive coins...\n\n"
-             "🗑️ <b>delete_wallet</b> - delete wallet...\n"
+             "📜 <b>transactions</b> - view transaction history...\n\n"
+            #  "📥 <b>receive</b> - receive coins...\n\n"
+            #  "🗑️ <b>delete_wallet</b> - delete wallet...\n"
 }
 UNKNOWN_MESSAGE = {
     "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
