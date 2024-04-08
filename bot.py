@@ -20,7 +20,6 @@ from handlers import (
 from logger_config import logger
 
 
-# Функция конфигурирования и запуска бота
 async def main() -> None:
     """
         Function to configure and run the bot.
@@ -40,7 +39,8 @@ async def main() -> None:
     logger.info("Initializing bot...")
     # Инициализируем бот и диспетчер
     bot: Bot = Bot(token=config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
-    dp: Dispatcher = Dispatcher()#(storage=storage)
+    dp: Dispatcher = Dispatcher()
+    # dp: Dispatcher = Dispatcher(storage=storage)
     logger.info("Bot initialized successfully.")
 
     # Сохраняем объект bot в хранилище workflow_data диспетчера dp. Это позволит использовать один и тот же объект
@@ -71,6 +71,5 @@ if __name__ == '__main__':
         logger.warning("Application terminated by the user")
     # Обработка неожиданных ошибок
     except Exception as error:
-        # Получение подробной информации об ошибке
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Unexpected error in the application: {error}\n{detailed_send_message_error}")

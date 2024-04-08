@@ -23,12 +23,24 @@ TRANSACTION_HISTORY_CACHE_DURATION = 3600
 
 
 class Settings(BaseSettings):
-    db_engine: str  # движок бд
-    db_name: str  # Название базы данных
-    db_host: str  # URL-адрес базы данных
-    db_user: str  # Имя пользователя базы данных
-    db_password: SecretStr  # Пароль к базе данных
-    bot_token: SecretStr  # Токена бота
+    """
+        Settings class for configuring the application.
+
+        Attributes:
+            db_engine (str): Database engine.
+            db_name (str): Name of the database.
+            db_host (str): URL address of the database.
+            db_user (str): Username for the database.
+            db_password (SecretStr): Password for the database.
+            bot_token (SecretStr): Token for the bot.
+            admin_ids (Union[list[int], int]): List of bot administrators' IDs.
+    """
+    db_engine: str                    # движок бд
+    db_name: str                      # Название базы данных
+    db_host: str                      # URL-адрес базы данных
+    db_user: str                      # Имя пользователя базы данных
+    db_password: SecretStr            # Пароль к базе данных
+    bot_token: SecretStr              # Токена бота
     admin_ids: Union[list[int], int]  # Список id администраторов бота
 
     class Config:

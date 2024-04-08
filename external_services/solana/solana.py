@@ -158,14 +158,14 @@ def is_valid_amount(amount: str | int | float) -> bool:
 
 async def get_sol_balance(wallet_addresses, client):
     """
-    Asynchronously retrieves the SOL balance for the specified wallet addresses.
+        Asynchronously retrieves the SOL balance for the specified wallet addresses.
 
-    Args:
-        wallet_addresses (Union[str, List[str]]): The wallet address or a list of wallet addresses.
-        client: The Solana client.
+        Args:
+            wallet_addresses (Union[str, List[str]]): The wallet address or a list of wallet addresses.
+            client: The Solana client.
 
-    Returns:
-        Union[float, List[float]]: The SOL balance or a list of SOL balances corresponding to the wallet addresses.
+        Returns:
+            Union[float, List[float]]: The SOL balance or a list of SOL balances corresponding to the wallet addresses.
     """
     try:
         # Если передан одиночный адрес кошелька

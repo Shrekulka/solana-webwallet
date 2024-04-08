@@ -1,18 +1,25 @@
 # solana_wallet_telegram_bot/models/models.py
+
 import traceback
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, select
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import relationship, Session, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
-from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address, \
-    get_wallet_address_from_private_key
+from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address
 from logger_config import logger
 
 
 class Base(AsyncAttrs, DeclarativeBase):
+    """
+        Base class for SQLAlchemy models.
+
+        Attributes:
+            AsyncAttrs (class): Asynchronous attribute access mixin.
+            DeclarativeBase (class): Declarative base class for SQLAlchemy models.
+    """
     pass
 
 
@@ -23,7 +30,6 @@ class SolanaWallet(Base):
         Attributes:
             id (int): The unique identifier for the wallet.
             wallet_address (str): The address of the wallet.
-            private_key (str): The private key of the wallet.
             balance (float): The balance of the wallet.
             created_at (DateTime): The datetime when the wallet was created.
             updated_at (DateTime): The datetime when the wallet was last updated.
@@ -68,21 +74,21 @@ class SolanaWallet(Base):
 
     @classmethod
     async def wallet_create(cls, session: Session, user_id: int, name: Optional[str] = None,
-                            description: Optional[str] = None) -> 'SolanaWallet':
+                            description: Optional[str] = None) -> Tuple['SolanaWallet', str]:
         """
-        Class method for creating a wallet.
+            Class method for creating a wallet.
 
-        Args:
-            session (Session): Database session.
-            user_id (int): User identifier.
-            name (str): Wallet name.
-            description (str, optional): Wallet description.
+            Args:
+                session (Session): Database session.
+                user_id (int): User identifier.
+                name (str): Wallet name.
+                description (str, optional): Wallet description.
 
-        Returns:
-            SolanaWallet: The created wallet.
+            Returns:
+                SolanaWallet: The created wallet.
 
-        Raises:
-            ValueError: If the wallet address is invalid or does not match the private key.
+            Raises:
+                ValueError: If the wallet address is invalid or does not match the private key.
         """
         # Генерация нового кошелька Solana с помощью внешней функции create_solana_wallet()
         wallet_address, private_key = await create_solana_wallet()
@@ -93,26 +99,27 @@ class SolanaWallet(Base):
         session.add(wallet)
         # Сохранение изменений в базе данных
         await session.commit()
-        # Возвращение созданного кошелька и приватного ключа
+        # Возвращение кортежа из созданного кошелька и приватного ключа
         return wallet, private_key
 
     @classmethod
-    async def connect_wallet(cls, session: Session, user_id: int, wallet_address: str, name: Optional[str] = None, description: Optional[str] = None) -> 'SolanaWallet':
+    async def connect_wallet(cls, session: Session, user_id: int, wallet_address: str, name: Optional[str] = None,
+                             description: Optional[str] = None) -> 'SolanaWallet':
         """
-        Class method for connecting a wallet.
+            Class method for connecting a wallet.
 
-        Args:
-            session (Session): Database session.
-            user_id (int): User identifier.
-            wallet_address (str): Wallet address.
-            name (str): Wallet name.
-            description (str): Wallet description.
+            Args:
+                session (Session): Database session.
+                user_id (int): User identifier.
+                wallet_address (str): Wallet address.
+                name (str): Wallet name.
+                description (str): Wallet description.
 
-        Returns:
-            SolanaWallet: The connected wallet.
+            Returns:
+                SolanaWallet: The connected wallet.
 
-        Raises:
-            ValueError: If the wallet address is invalid or does not match the private key.
+            Raises:
+                ValueError: If the wallet address is invalid or does not match the private key.
         """
         # Проверка валидности адреса кошелька
         if not is_valid_wallet_address(wallet_address):

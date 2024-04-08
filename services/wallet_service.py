@@ -1,7 +1,7 @@
 # solana_wallet_telegram_bot/services/wallet_service.py
 
 import traceback
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
@@ -27,7 +27,7 @@ async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User]
         Returns:
             Tuple[Optional[User], List[SolanaWallet]]: User object and list of user's SolanaWallet objects.
     """
-    user = None  # Инициализация переменной для пользователя
+    user = None        # Инициализация переменной для пользователя
     user_wallets = []  # Инициализация переменной для списка кошельков пользователя
 
     async with await get_db() as session:
@@ -111,10 +111,13 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
                 # Если это не запрос баланса, то редактируем сообщение со списком кошельков
                 # и отображаем клавиатуру с выбором кошелька
                 wallet_keyboard = await get_wallet_keyboard(user_wallets)
+                # Редактируем текст сообщения, выводя список кошельков отправителя
                 await callback.message.edit_text(LEXICON["list_sender_wallets"], reply_markup=wallet_keyboard)
+                # Если пользователь хочет выполнить операцию перевода средств
                 if action == "transfer":
                     # Устанавливаем состояние FSM для выбора отправителя
                     await state.set_state(FSMWallet.transfer_choose_sender_wallet)
+                # Если пользователь хочет просмотреть список транзакций для выбранного кошелька
                 elif action == "transactions":
                     # Устанавливаем состояние FSM для выбора кошелька для просмотра транзакций
                     await state.set_state(FSMWallet.choose_transaction_wallet)
@@ -130,20 +133,21 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
         logger.error(f"Error in process_{action}_command: {error}\n{detailed_error_traceback}")
 
 
-async def format_transaction_message(transaction):
+async def format_transaction_message(transaction: Dict) -> str:
     """
-    Форматирует сообщение о транзакции.
+        Formats the transaction message.
 
-    Args:
-        transaction (dict): Данные о транзакции.
+        Args:
+            transaction (dict): Transaction data.
 
-    Returns:
-        str: Отформатированное сообщение о транзакции.
+        Returns:
+            str: Formatted transaction message.
     """
+    # Форматируем сообщение о транзакции с помощью строкового шаблона из словаря LEXICON.
     transaction_message = LEXICON["transaction_info"].format(
         transaction_id='{}...{}'.format(
-            str(transaction.transaction.transaction.signatures[0])[:4],
-            str(transaction.transaction.transaction.signatures[0])[-4:],
+            str(transaction.transaction.transaction.signatures[0])[:4],  # Получаем первые 4 символа подписи транзакции.
+            str(transaction.transaction.transaction.signatures[0])[-4:],  # Получаем последние 4 символа подписи транзакции.
         ),
         # Отправитель транзакции - первый аккаунт в списке аккаунтов сообщения.
         sender='{}...{}'.format(

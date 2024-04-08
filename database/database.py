@@ -6,13 +6,15 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from config_data.config import config
 
-DB_ENGINE = config.db_engine
-DB_NAME = config.db_name
-DB_HOST = config.db_host
-DB_USER = config.db_user
-DB_PASSWORD = config.db_password.get_secret_value()
+# Получение параметров подключения к базе данных из конфигурационного файла
+DB_ENGINE = config.db_engine                         # Тип используемого движка базы данных (SQLite или PostgreSQL)
+DB_NAME = config.db_name                             # Название базы данных
+DB_HOST = config.db_host                             # URL-адрес базы данных
+DB_USER = config.db_user                             # Имя пользователя базы данных
+DB_PASSWORD = config.db_password.get_secret_value()  # Пароль к базе данных (получаем его в зашифрованном виде)
 
 
+# Если используется SQLite, создаем соответствующие объекты для работы с базой данных SQLite
 if DB_ENGINE == 'sqlite':
 
     # Создание движка базы данных
@@ -22,14 +24,31 @@ if DB_ENGINE == 'sqlite':
     AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
     async def get_db() -> AsyncSession:
+        """
+            Get a database session.
+
+            Returns:
+                AsyncSession: The database session.
+        """
+        # Открываем новую асинхронную сессию базы данных
         async with AsyncSessionLocal() as session:
+            # Возвращаем сессию после завершения блока (сессия закроется автоматически)
             return session
 
     # Функция для создания базы данных
     async def create_database() -> None:
+        """
+            Create the database.
+
+            Returns:
+                None
+        """
+        # Устанавливаем соединение с базой данных SQLite и открываем асинхронный контекст сессии
         async with aiosqlite.connect(f"{DB_NAME}.db") as db:
+            # Включаем поддержку внешних ключей для базы данных
             await db.execute("PRAGMA foreign_keys = ON")
-            # Create users table
+
+            # Создаем таблицу пользователей (если не существует)
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY,
@@ -37,7 +56,8 @@ if DB_ENGINE == 'sqlite':
                     username TEXT
                 )
             """)
-            # Create solana_wallets table
+
+            # Создаем таблицу кошельков Solana (если не существует)
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS solana_wallets (
                     id INTEGER PRIMARY KEY,
@@ -51,15 +71,26 @@ if DB_ENGINE == 'sqlite':
                     FOREIGN KEY(user_id) REFERENCES users(id)
                 )
             """)
+
+            # Применяем все изменения к базе данных
             await db.commit()
 
-    # Функция для инициализации базы данных
-    async def init_database() -> None:
-        async with AsyncSessionLocal() as session:
-            async with session.begin():
-                await create_database()
-                # код для создания таблиц и других необходимых действий для инициализации базы данных
 
+    async def init_database() -> None:
+        """
+            Initialize the database.
+
+            Returns:
+                None
+        """
+        # Открываем асинхронную сессию базы данных
+        async with AsyncSessionLocal() as session:
+            # Начинаем транзакцию в базе данных
+            async with session.begin():
+                # Вызываем функцию для создания базы данных
+                await create_database()
+
+# Если используется PostgreSQL, создаем соответствующие объекты для работы с базой данных PostgreSQL
 elif DB_ENGINE == 'postgresql':
 
     # Создание движка базы данных
@@ -69,13 +100,27 @@ elif DB_ENGINE == 'postgresql':
     AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
     async def get_db() -> AsyncSession:
+        """
+           Get a database session.
+
+           Returns:
+               AsyncSession: The database session.
+        """
+        # Открываем новую асинхронную сессию базы данных
         async with AsyncSessionLocal() as session:
+            # Возвращаем сессию после завершения блока (сессия закроется автоматически)
             return session
 
     from models.models import Base
 
     # Функция для инициализации базы данных
     async def init_database() -> None:
+        """
+            Initialize the database.
+
+            Returns:
+                None
+        """
         async with AsyncSessionLocal() as session:
             async with session.begin():
                 # код для создания таблиц и других необходимых действий для инициализации базы данных

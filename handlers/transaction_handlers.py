@@ -59,7 +59,7 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
             await callback.answer(LEXICON["empty_history"], show_alert=True, reply_markup=None)
 
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
-        await callback.answer()
+        # await callback.answer()
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in choose_transaction_wallet: {e}\n{detailed_error_traceback}")
