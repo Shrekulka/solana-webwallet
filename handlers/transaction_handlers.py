@@ -58,6 +58,7 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
             # Отправляем ответ пользователю с сообщением о пустой истории транзакций
             await callback.answer(LEXICON["empty_history"], show_alert=True, reply_markup=None)
 
+        await state.set_state(default_state)
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         # await callback.answer()
     except Exception as e:

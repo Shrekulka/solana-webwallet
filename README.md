@@ -4,15 +4,17 @@ This project is a full-featured Telegram bot for interacting with Solana wallets
 convenient and secure interface for creating, managing, and performing operations with Solana wallets directly from
 Telegram.
 
-### Preview Version
+[![PRESENTATION SOLANA TELEGRAM WALLET](https://img.youtube.com/vi/96TPWHDh5Gk/0.jpg)](https://www.youtube-nocookie.com/embed/96TPWHDh5Gk)
 
-#### SolanaWallet
+## Preview Version
+
+### SolanaWallet
 
 - t.me/solana_wallet_crypto_bot
 - @solana_wallet_crypto_bot
 - SolanaWallet bot uses a test node - https://api.testnet.solana.com
 
-#### SolanaWallet-v2
+### SolanaWallet-v2
 
 - t.me/solana_wallet_crypto_v2_bot
 - @solana_wallet_crypto_v2_bot
@@ -41,6 +43,7 @@ You need to specify your token for accessing the Telegram API and the database e
 - Make sure that your bot has polling mode enabled for updates.
 
 Example `.env`:
+
 ```bash
 # Settings for the token and list of administrators for the bot.
 # BOT_TOKEN - token for accessing the Telegram API.
@@ -88,19 +91,19 @@ python bot.py
 
 ### Creating a new Solana wallet
 
-![demo](doc_media/demo/create-wallet.gif)
+![demo](docs/demo/create-wallet.gif)
 
 ### Connecting an existing Solana wallet
 
-![demo](doc_media/demo/connect-wallet.gif)
+![demo](docs/demo/connect-wallet.gif)
 
 ### Send token
 
-![demo](doc_media/demo/send-token.gif)
+![demo](docs/demo/send-token.gif)
 
 ### Viewing transaction history
 
-![demo](doc_media/demo/transaction-info.gif)
+![demo](docs/demo/transaction-info.gif)
 
 ## Description of Functionality and Project Architecture
 
@@ -210,7 +213,7 @@ Overall, this project demonstrates a deep understanding of software design princ
 with external APIs, and ensuring a quality user experience. The bot is ready for deployment and use by the Solana
 community for secure and convenient management of cryptocurrency wallets.
 
-### Project Structure
+## Project Structure
 
 ```bash
 📁 solana_wallet_telegram_bot/                    # Project directory containing the main bot files
