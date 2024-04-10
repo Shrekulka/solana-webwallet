@@ -115,7 +115,7 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transaction_info": "<b>💼 Transaction:</b> {transaction_id}:\n"
                         "<b>📲 Sender:</b> {sender}\n"
                         "<b>📬 Recipient:</b> {recipient}\n"
-                        "<b>💰 Amount:</b> {amount} lamports"
+                        "<b>💰 Amount:</b> {amount_in_sol} SOL"
 }
 
 # Неизвестный ввод сообщения

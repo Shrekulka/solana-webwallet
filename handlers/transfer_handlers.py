@@ -2,6 +2,7 @@
 
 import asyncio
 import traceback
+from decimal import Decimal
 
 import solana.rpc.core
 from aiogram import Router, F
@@ -10,6 +11,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select
 
+from config_data.config import LAMPORT_TO_SOL_RATIO
 from database.database import get_db
 from external_services.solana.solana import (
     is_valid_wallet_address,
@@ -203,8 +205,7 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
             # min_balance_resp = http_client.get_minimum_balance_for_rent_exemption(1)
             min_balance_resp = (await http_client.get_minimum_balance_for_rent_exemption(1)).value
             # Извлекаем значение минимального баланса из ответа. Min balance: 897840lamports/1000000000 = 0.00089784 Sol
-            # min_balance = min_balance_resp.value / 10 ** 9
-            min_balance = min_balance_resp / 10 ** 9
+            min_balance = min_balance_resp / LAMPORT_TO_SOL_RATIO
             logger.debug(f"Balance: {balance}, Min balance: {min_balance}")
 
         # В случае возникновения ошибки при получении баланса отправителя или минимального баланса.
@@ -231,7 +232,8 @@ async def process_transfer_amount(message: Message, state: FSMContext) -> None:
             result = await transfer_token(sender_address, sender_private_key, recipient_address, amount, http_client)
             # Если перевод выполнен успешно, отправляем сообщение об успешном переводе.
             if result:
-                formatted_amount = '{:.6f}'.format(amount)
+                # formatted_amount = '{:.6f}'.format(amount)
+                formatted_amount = '{:.6f}'.format(Decimal(str(amount)))
                 await message.answer(
                     LEXICON["transfer_successful"].format(amount=formatted_amount, recipient=recipient_address))
             # Если перевод не выполнен успешно, отправляем сообщение о неудаче.

@@ -1,12 +1,14 @@
 # solana_wallet_telegram_bot/services/wallet_service.py
 
 import traceback
+from decimal import Decimal
 from typing import Tuple, Optional, List, Dict
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from sqlalchemy import select
 
+from config_data.config import LAMPORT_TO_SOL_RATIO
 from database.database import get_db
 from external_services.solana.solana import get_sol_balance, http_client
 from keyboards.main_keyboard import main_keyboard
@@ -27,7 +29,7 @@ async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User]
         Returns:
             Tuple[Optional[User], List[SolanaWallet]]: User object and list of user's SolanaWallet objects.
     """
-    user = None        # Инициализация переменной для пользователя
+    user = None  # Инициализация переменной для пользователя
     user_wallets = []  # Инициализация переменной для списка кошельков пользователя
 
     async with await get_db() as session:
@@ -135,31 +137,40 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
 
 async def format_transaction_message(transaction: Dict) -> str:
     """
-        Formats the transaction message.
+       Formats the transaction message.
 
-        Args:
-            transaction (dict): Transaction data.
+       Args:
+           transaction (dict): Transaction data.
 
-        Returns:
-            str: Formatted transaction message.
+       Returns:
+           str: Formatted transaction message.
     """
-    # Форматируем сообщение о транзакции с помощью строкового шаблона из словаря LEXICON.
+    # Расчет суммы в SOL из лампортов
+    amount_in_sol = (transaction.transaction.meta.pre_balances[0] -
+                     transaction.transaction.meta.post_balances[0]) / LAMPORT_TO_SOL_RATIO
+
+    # Форматирование суммы в SOL с двумя десятичными знаками
+    formatted_amount = '{:.6f}'.format(Decimal(str(amount_in_sol)))
+
+    # Форматирование сообщения о транзакции с использованием лексикона
     transaction_message = LEXICON["transaction_info"].format(
+        # Форматирование идентификатора транзакции
         transaction_id='{}...{}'.format(
-            str(transaction.transaction.transaction.signatures[0])[:4],  # Получаем первые 4 символа подписи транзакции.
-            str(transaction.transaction.transaction.signatures[0])[-4:],  # Получаем последние 4 символа подписи транзакции.
+            str(transaction.transaction.transaction.signatures[0])[:4],  # Берем первые 4 символа
+            str(transaction.transaction.transaction.signatures[0])[-4:]  # Берем последние 4 символа
         ),
-        # Отправитель транзакции - первый аккаунт в списке аккаунтов сообщения.
+        # Форматирование счета отправителя
         sender='{}...{}'.format(
-            str(transaction.transaction.transaction.message.account_keys[0])[:4],
-            str(transaction.transaction.transaction.message.account_keys[0])[-4:],
+            str(transaction.transaction.transaction.message.account_keys[0])[:4],  # Берем первые 4 символа
+            str(transaction.transaction.transaction.message.account_keys[0])[-4:]  # Берем последние 4 символа
         ),
-        # Получатель транзакции - второй аккаунт в списке аккаунтов сообщения.
+        # Форматирование счета получателя
         recipient='{}...{}'.format(
-            str(transaction.transaction.transaction.message.account_keys[1])[:4],
-            str(transaction.transaction.transaction.message.account_keys[1])[-4:],
+            str(transaction.transaction.transaction.message.account_keys[1])[:4],  # Берем первые 4 символа
+            str(transaction.transaction.transaction.message.account_keys[1])[-4:]  # Берем последние 4 символа
         ),
-        # Разница в балансе отправителя до и после транзакции, выраженная в SOL.
-        amount=transaction.transaction.meta.pre_balances[0] - transaction.transaction.meta.post_balances[0]
+        # Включение суммы в SOL в отформатированное сообщение
+        amount_in_sol=formatted_amount
     )
+    # Возвращаем отформатированное сообщение о транзакции
     return transaction_message
