@@ -8,6 +8,14 @@ from aiogram.client.default import DefaultBotProperties
 # from aiogram.fsm.storage.redis import RedisStorage
 # from redis.asyncio.client import Redis
 
+####### django #####
+import os
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'web.settings')
+django.setup()
+####################
+
 from config_data.config import config
 from database.database import init_database
 from handlers import (

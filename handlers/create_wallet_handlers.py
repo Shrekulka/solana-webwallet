@@ -18,14 +18,7 @@ from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address
 
-
 ########### django #########
-# import os
-# import django
-
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'web.settings')
-# django.setup()
-
 from django.contrib.auth import get_user_model
 from applications.wallet.models import Wallet
 from asgiref.sync import sync_to_async
@@ -36,16 +29,6 @@ def get_user(telegram_id):
     DjangoUser = get_user_model()
     user = DjangoUser.objects.filter(telegram_id=telegram_id).first()
     return user
-
-@sync_to_async
-def get_wallet(user, wallet_address):
-    wallet = Wallet.objects.filter(user=user, wallet_address=wallet_address).first()
-    return wallet
-
-@sync_to_async
-def update_wallet(wallet, name, description):
-    wallet.update(name=name, description=description)
-    return None
 
 @sync_to_async
 def create_wallet(user, wallet_address, name, description):
@@ -139,40 +122,12 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         name = data.get("wallet_name")
         # Извлекаем описание кошелька из данных
         description = data.get("description")
-        # Извлекаем адрес кошелька из данных (если он есть)
-        wallet_address = data.get("wallet_address")
+
         user = await get_user(telegram_id=message.from_user.id)
-        if wallet_address:
-            wallet = await get_wallet(user=user, wallet_address=wallet_address)
-            if wallet:
-                await update_wallet(wallet=wallet, name=name, description=description)
-            else:
-                wallet_address, private_key = await create_solana_wallet()
-                wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
-                await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
-        else:
-            wallet_address, private_key = await create_solana_wallet()
-            wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
+        wallet_address, private_key = await create_solana_wallet()
+        wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
+        if wallet:
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
-
-        # # Создаем соединение с базой данных
-        # async with await get_db() as session:
-        #     user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
-        #     user = user.scalar()
-
-        #     # Если wallet_address есть в данных состояния, обновляем существующий кошелек
-        #     if wallet_address:
-        #         wallet = await SolanaWallet.update_wallet(session, user.id, wallet_address, name=name,
-        #                                                   description=description)
-        #         if wallet is None:  # Если кошелек не найден, создаем новый
-        #             wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
-        #                                                                    description=description)
-        #             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
-        #     # Иначе создаем новый кошелек
-        #     else:
-        #         wallet, private_key = await SolanaWallet.wallet_create(session, user.id, name=name,
-        #                                                                description=description)
-        #         await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
 
         # Если адреса кошелька нет, выводим сообщение об успешном создании и возвращаемся в главное меню
         await message.answer(

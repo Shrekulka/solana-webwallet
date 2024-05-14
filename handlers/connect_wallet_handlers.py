@@ -19,6 +19,25 @@ from models.models import SolanaWallet, User
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 
+########### django #########
+from django.contrib.auth import get_user_model
+from applications.wallet.models import Wallet
+from asgiref.sync import sync_to_async
+
+
+@sync_to_async
+def get_user(telegram_id):
+    DjangoUser = get_user_model()
+    user = DjangoUser.objects.filter(telegram_id=telegram_id).first()
+    return user
+
+@sync_to_async
+def create_wallet(user, wallet_address, name, description):
+    wallet = Wallet.objects.create(user=user, wallet_address=wallet_address, name=name, description=description)
+    return wallet
+
+############################
+
 # Инициализируем роутер уровня модуля
 connect_wallet_router: Router = Router()
 
@@ -41,22 +60,20 @@ async def process_connect_wallet_address(message: Message, state: FSMContext) ->
         # Проверяем валидность адреса кошелька
         if is_valid_wallet_address(wallet_address):
             # Обновляем данные состояния с адресом кошелька
-            async with await get_db() as session:
-                user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
-                user = user.scalar()
+            user = await get_user(telegram_id=message.from_user.id)
+            user_wallets = []
 
-                user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
-                user_wallets = user_wallets.scalars().all()
+            async for w in Wallet.objects.filter(user=user):
+                user_wallets.append(w.wallet_address)
 
-                if user_wallets and (wallet_address in [w.wallet_address for w in user_wallets]):
-                    await message.answer(
-                        LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
-                    await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
-                else:
-                    await state.update_data(wallet_address=wallet_address)
-                    # Отправляем запрос на ввод имени
-                    await message.answer(LEXICON["connect_wallet_add_name"], reply_markup=back_keyboard)
-                    await state.set_state(FSMWallet.connect_wallet_add_name)
+            if wallet_address in user_wallets:
+                await message.answer(LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
+                await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
+            else:
+                await state.update_data(wallet_address=wallet_address)
+                # Отправляем запрос на ввод имени
+                await message.answer(LEXICON["connect_wallet_add_name"], reply_markup=back_keyboard)
+                await state.set_state(FSMWallet.connect_wallet_add_name)
 
         else:
             # Если адрес невалиден, отправляем сообщение об ошибке и просим ввести адрес заново
@@ -152,22 +169,18 @@ async def process_connect_wallet_description(message: Message, state: FSMContext
         # Извлекаем адрес кошелька из данных (если он есть)
         wallet_address = data.get("wallet_address")
 
-        # Создаем соединение с базой данных
-        async with await get_db() as session:
-            user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
-            user = user.scalar()
+        user = await get_user(telegram_id=message.from_user.id)
+        wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
 
-            wallet = await SolanaWallet.connect_wallet(
-                session, user.id, wallet_address, name, description,
-            )
-            # Отправляем сообщение об успешном подключении кошелька и очищаем состояние
-            await message.answer(
-                LEXICON["wallet_connected_successfully"].format(wallet_address=wallet.wallet_address))
+        if wallet:
+            # Отправляем сообщение об успешном подключении
+            await message.answer(LEXICON["wallet_connected_successfully"].format(wallet_address=wallet.wallet_address))
 
-            # Очищаем состояние после добавления кошелька
-            await state.clear()
-            # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
-            await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
+        # Очищаем состояние после добавления кошелька
+        await state.clear()
+        # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
+        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
+
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_connect_wallet_description: {e}\n{detailed_error_traceback}")

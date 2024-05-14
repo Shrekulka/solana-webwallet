@@ -35,7 +35,7 @@ class Wallet(Common):
     )
 
     class Meta:
-        ordering = ['created']
+        ordering = ['-created']
         verbose_name = 'wallet'
         verbose_name_plural = 'wallets'
 

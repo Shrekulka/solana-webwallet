@@ -18,6 +18,20 @@ from logger_config import logger
 from models.models import User, SolanaWallet
 from states.states import FSMWallet
 
+########### django #########
+from django.contrib.auth import get_user_model
+from applications.wallet.models import Wallet
+from asgiref.sync import sync_to_async
+
+
+@sync_to_async
+def get_user(telegram_id):
+    DjangoUser = get_user_model()
+    user = DjangoUser.objects.filter(telegram_id=telegram_id).first()
+    return user
+
+############################
+
 
 async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User], List[SolanaWallet]]:
     """
@@ -32,20 +46,12 @@ async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User]
     user = None  # Инициализация переменной для пользователя
     user_wallets = []  # Инициализация переменной для списка кошельков пользователя
 
-    async with await get_db() as session:
-        # Получаем пользователя по его telegram_id
-        user = await session.execute(select(User).filter_by(telegram_id=callback.from_user.id))
-        # Получаем объект пользователя из результата запроса
-        user = user.scalar()
+    user = await get_user(telegram_id=callback.from_user.id)
 
-        # Если пользователь найден
-        if user:
-            # Получаем кошельки пользователя из базы данных, фильтруя по идентификатору пользователя
-            user_wallets = await session.execute(select(SolanaWallet).filter_by(user_id=user.id))
-            # Преобразуем результат запроса в список скалярных значений
-            user_wallets = user_wallets.scalars().all()
-            # Преобразуем список скалярных значений в список кошельков
-            user_wallets = list(user_wallets)
+    if user:
+
+        async for w in Wallet.objects.filter(user=user):
+            user_wallets.append(w)
 
     # Возвращаем пользователя и его кошельки
     return user, user_wallets

@@ -29,6 +29,18 @@ from logger_config import logger
 from models.models import SolanaWallet
 from states.states import FSMWallet
 
+########### django #########
+from applications.wallet.models import Wallet
+from asgiref.sync import sync_to_async
+
+
+@sync_to_async
+def get_wallet(wallet_address):
+    wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
+    return wallet
+
+############################
+
 # Инициализируем роутер уровня модуля
 transfer_router: Router = Router()
 
@@ -50,16 +62,21 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
         # Извлекаем адрес кошелька из callback_data
         wallet_address = callback.data.split(":")[1]
 
-        # Асинхронно получаем доступ к базе данных.
-        async with await get_db() as session:
-            # Получаем данные кошелька из базы данных по его адресу
-            wallet = await session.execute(select(SolanaWallet).filter_by(wallet_address=wallet_address))
-            wallet = wallet.scalar()
+        wallet = await get_wallet(wallet_address=wallet_address)
 
-            # # Обновляем данные состояния с адресом и приватным ключом отправителя
-            # await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
-            # Обновляем данные состояния с адресом отправителя
-            await state.update_data(sender_address=wallet.wallet_address)
+        # Обновляем данные состояния с адресом отправителя
+        await state.update_data(sender_address=wallet.wallet_address)
+
+        # # Асинхронно получаем доступ к базе данных.
+        # async with await get_db() as session:
+        #     # Получаем данные кошелька из базы данных по его адресу
+        #     wallet = await session.execute(select(SolanaWallet).filter_by(wallet_address=wallet_address))
+        #     wallet = wallet.scalar()
+
+        #     # # Обновляем данные состояния с адресом и приватным ключом отправителя
+        #     # await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
+        #     # Обновляем данные состояния с адресом отправителя
+        #     await state.update_data(sender_address=wallet.wallet_address)
 
         # Отправляем запрос на ввод адреса получателя
         await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)

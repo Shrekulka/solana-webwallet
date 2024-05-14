@@ -19,12 +19,6 @@ from states.states import FSMWallet
 from config_data.config import SOLANA_NODE_URL
 
 ########### django #########
-import os
-import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'web.settings')
-django.setup()
-
 from django.contrib.auth import get_user_model
 from asgiref.sync import sync_to_async
 

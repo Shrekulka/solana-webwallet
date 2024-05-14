@@ -9,6 +9,7 @@ class AdminUser(UserAdmin):
     list_filter = ['is_active', 'is_bot']
     search_fields = ['username', 'first_name', 'last_name', 'telegram_username']
     date_hierarchy = 'date_joined'
+    ordering = ['-date_joined']
     fieldsets = (
         (None, {
             'fields': ('username', 'password',)
