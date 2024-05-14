@@ -18,6 +18,25 @@ from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
 from config_data.config import SOLANA_NODE_URL
 
+########### django #########
+import os
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'web.settings')
+django.setup()
+
+from django.contrib.auth import get_user_model
+from asgiref.sync import sync_to_async
+
+
+@sync_to_async
+def update_or_create_user(telegram_id, defaults):
+    DjangoUser = get_user_model()
+    user, created = DjangoUser.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
+    return user, created
+
+############################
+
 # Инициализируем роутер уровня модуля
 user_router: Router = Router()
 
@@ -44,16 +63,17 @@ async def process_start_command(message: Message, state: FSMContext) -> None:
             reply_markup=main_keyboard,
         )
 
-        # Получение сессии базы данных
-        async with await get_db() as session:
-            # Поиск пользователя в базе данных по ID Telegram
-            user = await session.execute(select(User).filter_by(telegram_id=message.from_user.id))
-            user = user.scalar()
-            # Если пользователь не найден, создаем новую запись о нем в базе данных
-            if not user:
-                new_user = User(telegram_id=message.from_user.id, username=message.from_user.username)
-                session.add(new_user)
-                await session.commit()
+        user_data = {
+            'username': '{}'.format(message.from_user.id),
+            'telegram_language': message.from_user.language_code or 'en',
+            'telegram_username': message.from_user.username[:64] if message.from_user.username else '',
+            'first_name': message.from_user.first_name[:60] if message.from_user.first_name else '',
+            'last_name': message.from_user.last_name[:60] if message.from_user.last_name else '',
+            'is_bot': 'Yes' if message.from_user.is_bot else 'No',
+            'raw_data': message.from_user.dict(),
+        }
+
+        user, created = await update_or_create_user(telegram_id=message.from_user.id, defaults=user_data)
     except Exception as e:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_start_command: {e}\n{detailed_send_message_error}")

@@ -77,6 +77,26 @@ docker-compose -f docker-compose.yml up -d
 docker-compose -f docker-compose.yml down -v
 ```
 
+## Preparation Django
+
+```bash
+cd solana-webwallet/
+# if not activated yet, then activate the virtual environment
+source env/bin/activate
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### Running Django
+
+```bash
+cd solana-webwallet/
+# if not activated yet, then activate the virtual environment
+source env/bin/activate
+python manage.py runserver
+```
+
 ### Running a bot
 
 ```bash

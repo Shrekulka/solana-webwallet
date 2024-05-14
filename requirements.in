@@ -10,3 +10,5 @@ aiosqlite
 asyncpg
 python-dotenv
 base58
+django
+django-model-utils
