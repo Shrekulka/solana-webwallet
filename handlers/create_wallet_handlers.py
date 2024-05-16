@@ -124,7 +124,7 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         description = data.get("description")
 
         user = await get_user(telegram_id=message.from_user.id)
-        wallet_address, private_key = await create_solana_wallet()
+        wallet_address, private_key, words = await create_solana_wallet()
         wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
         if wallet:
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
@@ -134,7 +134,8 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
             LEXICON["wallet_created_successfully"].format(wallet_name=wallet.name,
                                                           wallet_description=wallet.description,
                                                           wallet_address=wallet.wallet_address,
-                                                          private_key=private_key))
+                                                          private_key=private_key,
+                                                          seed_phrase=words))
         # Очищаем состояние после добавления кошелька
         await state.clear()
         # Отправляем сообщение с предложением продолжить и клавиатурой основного меню

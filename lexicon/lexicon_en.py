@@ -62,7 +62,8 @@ CREATE_WALLET_MESSAGE = {
                                    "<b><i>Wallet name:</i> {wallet_name}</b>\n"
                                    "<b><i>Wallet description:</i> {wallet_description}</b>\n"
                                    "<b><i>Wallet address:</i> {wallet_address}</b>\n"
-                                   "<b><i>Private key:</i> {private_key}</b>\n",
+                                   "<b><i>Private key:</i> {private_key}</b>\n"
+                                   "<b><i>Seed phrase:</i> {seed_phrase}</b>\n",
     "invalid_wallet_name": "❌ <b>Invalid wallet name entered.</b>\n"
                            "Please enter a valid name for your wallet.",
     "invalid_wallet_description": "❌ <b>Invalid wallet description entered.</b>\n"

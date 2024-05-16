@@ -6,6 +6,7 @@ from typing import Tuple, Dict, List, Optional, Any
 
 import base58
 import httpx
+import mnemonic
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
@@ -25,7 +26,7 @@ http_client = AsyncClient(SOLANA_NODE_URL, timeout=timeout_settings)
 transaction_history_cache: Dict[str, Tuple[List, float]] = {}
 
 
-async def create_solana_wallet() -> Tuple[str, str]:
+async def create_solana_wallet() -> Tuple[str, str, str]:
     """
         Generate a new Solana wallet.
 
@@ -36,15 +37,24 @@ async def create_solana_wallet() -> Tuple[str, str]:
             Exception: If there's an error during the wallet creation process.
     """
     try:
-        # Генерация нового кошелька
-        keypair = Keypair()
-        # Получение публичного адреса кошелька
+        solana_derivation_path = "m/44'/501'/0'/0'"
+        mnemo = mnemonic.Mnemonic("english")
+        words = mnemo.generate(strength=128) # strength=128 for 12 words
+        seed = mnemo.to_seed(words, passphrase="")
+        keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
         wallet_address = str(keypair.pubkey())
-        # Получение приватного ключа кошелька и преобразование в шестнадцатеричное представление
         private_key = keypair.secret().hex()
+        return wallet_address, private_key, words
 
-        # Возвращаем публичный адрес кошелька и приватный ключ кошелька как кортеж
-        return wallet_address, private_key
+        # # Генерация нового кошелька
+        # keypair = Keypair()
+        # # Получение публичного адреса кошелька
+        # wallet_address = str(keypair.pubkey())
+        # # Получение приватного ключа кошелька и преобразование в шестнадцатеричное представление
+        # private_key = keypair.secret().hex()
+
+        # # Возвращаем публичный адрес кошелька и приватный ключ кошелька как кортеж
+        # return wallet_address, private_key
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()

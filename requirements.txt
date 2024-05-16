@@ -34,6 +34,7 @@ magic-filter==1.0.12
 MarkupSafe==2.1.5
 marshmallow==3.21.1
 mccabe==0.7.0
+mnemonic==0.21
 multidict==6.0.5
 mysqlclient==2.2.4
 packaging==24.0
