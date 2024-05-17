@@ -31,7 +31,7 @@ async def create_solana_wallet() -> Tuple[str, str, str]:
         Generate a new Solana wallet.
 
         Returns:
-            Tuple[str, str]: A tuple containing the public address and private key of the generated wallet.
+            Tuple[str, str, str]: A tuple containing the public address and private key of the generated wallet.
 
         Raises:
             Exception: If there's an error during the wallet creation process.
@@ -45,16 +45,6 @@ async def create_solana_wallet() -> Tuple[str, str, str]:
         wallet_address = str(keypair.pubkey())
         private_key = keypair.secret().hex()
         return wallet_address, private_key, words
-
-        # # Генерация нового кошелька
-        # keypair = Keypair()
-        # # Получение публичного адреса кошелька
-        # wallet_address = str(keypair.pubkey())
-        # # Получение приватного ключа кошелька и преобразование в шестнадцатеричное представление
-        # private_key = keypair.secret().hex()
-
-        # # Возвращаем публичный адрес кошелька и приватный ключ кошелька как кортеж
-        # return wallet_address, private_key
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()

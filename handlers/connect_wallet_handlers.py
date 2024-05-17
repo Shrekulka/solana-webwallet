@@ -15,7 +15,6 @@ from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import SolanaWallet, User
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 
@@ -27,8 +26,8 @@ from asgiref.sync import sync_to_async
 
 @sync_to_async
 def get_user(telegram_id):
-    DjangoUser = get_user_model()
-    user = DjangoUser.objects.filter(telegram_id=telegram_id).first()
+    User = get_user_model()
+    user = User.objects.filter(telegram_id=telegram_id).first()
     return user
 
 @sync_to_async

@@ -31,7 +31,8 @@ HELP_MESSAGES = {
 
 # Кнопки главного меню
 MAIN_MENU_BUTTONS: dict[str, str] = {
-    "create_wallet": "🔑 Create wallet",
+    "create_wallet": "🔑 Create new wallet",
+    "create_wallet_from_seed": "🔑 Create wallet from seed phrase",
     "connect_wallet": "🔗 Connect wallet",
     "balance": "💰 Show balance",
     "token_price": "💹 Show token price",
@@ -69,6 +70,10 @@ CREATE_WALLET_MESSAGE = {
     "invalid_wallet_description": "❌ <b>Invalid wallet description entered.</b>\n"
                                   "Please enter a valid description for your wallet.",
     "create_new_name_wallet": "💼 <b>Enter a new name for the connected wallet:</b>",
+    "create_seed_wallet": "💼 <b>Please enter your secret seed phrase:</b>",
+    "wallet_seed_confirmation": "💼 <b>Your wallet seed phrase:</b> {seed_phrase}",
+    "invalid_wallet_seed": "❌ <b>Invalid wallet seed entered.</b>\n"
+                           "Please enter a valid seed for your wallet.",
 }
 
 # Сообщения для 'connect_wallet'
@@ -109,8 +114,9 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "save_new_wallet_prompt": "<b>💾 Save this wallet address:</b> ",
     "wallet_info_template": "{number}) 💼 {name} 📍 {address} 💰 {balance}",
     "invalid_amount": "<b>❌ Invalid amount.</b>",
-    "transfer_sender_private_key_prompt": "<b>Enter private key for this wallet:</b>",
+    "transfer_sender_private_key_prompt": "<b>Enter private key or seed phrase for this wallet:</b>",
     "invalid_private_key": "<b>❌ Invalid private key.</b>",
+    "invalid_seed_phrase": "<b>❌ Invalid seed phrase.</b>",
     "empty_history": "😔 Transaction history is empty.",
     "server_unavailable": "The server is currently unavailable. Please try again later.",
     "transaction_info": "<b>💼 Transaction:</b> {transaction_id}:\n"

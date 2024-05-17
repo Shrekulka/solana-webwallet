@@ -9,10 +9,12 @@ from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from sqlalchemy import select
+# from sqlalchemy import select
+from mnemonic import Mnemonic
+from solders.keypair import Keypair
 
 from config_data.config import LAMPORT_TO_SOL_RATIO
-from database.database import get_db
+# from database.database import get_db
 from external_services.solana.solana import (
     is_valid_wallet_address,
     is_valid_private_key,
@@ -26,8 +28,8 @@ from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import SolanaWallet
 from states.states import FSMWallet
+from utils.validators import is_valid_wallet_seed_phrase
 
 ########### django #########
 from applications.wallet.models import Wallet
@@ -47,7 +49,8 @@ transfer_router: Router = Router()
 
 @transfer_router.callback_query(F.data.startswith("wallet_address:"),
                                 StateFilter(FSMWallet.transfer_choose_sender_wallet))
-async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContext) -> None:
+async def process_choose_sender_wallet(callback: CallbackQuery,
+                                       state: FSMContext) -> None:
     """
         Handles the user's selection of the sender wallet for transfer.
 
@@ -59,39 +62,29 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
             None
     """
     try:
-        # Извлекаем адрес кошелька из callback_data
         wallet_address = callback.data.split(":")[1]
-
         wallet = await get_wallet(wallet_address=wallet_address)
 
-        # Обновляем данные состояния с адресом отправителя
-        await state.update_data(sender_address=wallet.wallet_address)
+        await state.update_data(
+            sender_address=wallet.wallet_address,
+            solana_derivation_path_number=wallet.solana_derivation_path_number)
 
-        # # Асинхронно получаем доступ к базе данных.
-        # async with await get_db() as session:
-        #     # Получаем данные кошелька из базы данных по его адресу
-        #     wallet = await session.execute(select(SolanaWallet).filter_by(wallet_address=wallet_address))
-        #     wallet = wallet.scalar()
-
-        #     # # Обновляем данные состояния с адресом и приватным ключом отправителя
-        #     # await state.update_data(sender_address=wallet.wallet_address, sender_private_key=wallet.private_key)
-        #     # Обновляем данные состояния с адресом отправителя
-        #     await state.update_data(sender_address=wallet.wallet_address)
-
-        # Отправляем запрос на ввод адреса получателя
         await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
-        # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
-        # await state.set_state(FSMWallet.transfer_recipient_address)
+
         await state.set_state(FSMWallet.transfer_sender_private_key)
+
         # Избегаем ощущения, что бот завис, избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
         await callback.answer()
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Error in process_choose_sender_wallet: {e}\n{detailed_error_traceback}")
+        logger.error(
+            f"Error in process_choose_sender_wallet: {e}\n{detailed_error_traceback}"
+        )
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_sender_private_key))
-async def process_transfer_sender_private_key(message: Message, state: FSMContext) -> None:
+async def process_transfer_sender_private_key(message: Message,
+                                              state: FSMContext) -> None:
     """
         Handles the user input of the sender's private key.
 
@@ -103,12 +96,40 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
             None
     """
     try:
-        private_key = message.text
+        private_key = ''
+        seed_phrase = ''
+        message_text = message.text.strip()
+
+        data = await state.get_data()
+        # Извлекаем адрес отправителя из данных состояния.
+        solana_derivation_path_number = data.get("solana_derivation_path_number")
+
+        if message_text:
+            if len(message_text.split()) == 1:
+                private_key = message_text
+            elif len(message_text.split()) in [12, 24]:
+                seed_phrase = message_text
+
+        if seed_phrase:
+            if is_valid_wallet_seed_phrase(seed_phrase):
+                solana_derivation_path = f"m/44'/501'/0'/{solana_derivation_path_number}'"
+                mnemo = Mnemonic("english")
+                seed = mnemo.to_seed(seed_phrase, passphrase="")
+                keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
+                private_key = keypair.secret().hex()
+            else:
+                sent_message = await message.answer(LEXICON["invalid_seed_phrase"], reply_markup=None)
+                await asyncio.sleep(1)
+                await message.delete()
+                await sent_message.delete()
+                await message.answer(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
+
         if is_valid_private_key(private_key):
             data = await state.get_data()
-            sender_address_from_bd = data.get("sender_address")
+            sender_address_from_db = data.get("sender_address")
             sender_address_from_keypair = get_wallet_address_from_private_key(private_key)
-            if sender_address_from_bd == sender_address_from_keypair:
+
+            if sender_address_from_db == sender_address_from_keypair:
                 # Обновляем данные состояния с приватным ключом отправителя
                 await state.update_data(sender_private_key=private_key)
                 # Отправляем запрос на ввод адреса получателя
@@ -116,7 +137,8 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
                 # Устанавливаем состояние transfer_recipient_address для перехода к следующему шагу в процессе перевода.
                 await state.set_state(FSMWallet.transfer_recipient_address)
             else:
-                sent_message = await message.answer(LEXICON["invalid_private_key"], reply_markup=None)
+                sent_message = await message.answer(
+                    LEXICON["invalid_private_key"], reply_markup=None)
                 await asyncio.sleep(1)
                 await message.delete()
                 await sent_message.delete()
@@ -136,7 +158,9 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
-        logger.error(f"Error in process_transfer_sender_private_key: {e}\n{detailed_error_traceback}")
+        logger.error(
+            f"Error in process_transfer_sender_private_key: {e}\n{detailed_error_traceback}"
+        )
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_recipient_address))

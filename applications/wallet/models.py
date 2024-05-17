@@ -25,7 +25,7 @@ class Wallet(Common):
     wallet_address = models.CharField(
         verbose_name='Wallet address',
         max_length=200,
-        unique=True,
+        # unique=True,
     )
 
     description = models.CharField(
@@ -34,8 +34,13 @@ class Wallet(Common):
         blank=True,
     )
 
+    solana_derivation_path_number = models.PositiveIntegerField(
+        verbose_name='Number of Solana derivation path',
+        default=0,
+    )
+
     class Meta:
-        ordering = ['-created']
+        ordering = ['created']
         verbose_name = 'wallet'
         verbose_name_plural = 'wallets'
 

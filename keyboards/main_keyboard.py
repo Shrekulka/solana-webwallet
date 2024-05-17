@@ -39,6 +39,8 @@ def create_keyboard(data: list) -> InlineKeyboardMarkup:
 button_data = [
     # Текст кнопки и данные обратного вызова для создания кошелька
     (LEXICON["create_wallet"], "callback_button_create_wallet"),
+    # Текст кнопки и данные обратного вызова для создания кошелька из Seed фразы
+    (LEXICON["create_wallet_from_seed"], "callback_button_create_wallet_from_seed"),
     # Текст кнопки и данные обратного вызова для подключения кошелька
     (LEXICON["connect_wallet"], "callback_button_connect_wallet"),
     # Текст кнопки и данные обратного вызова для проверки баланса

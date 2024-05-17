@@ -7,13 +7,12 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery
-from sqlalchemy import select
+# from sqlalchemy import select
 
-from database.database import get_db
+# from database.database import get_db
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import User
 from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
 from config_data.config import SOLANA_NODE_URL
@@ -25,8 +24,8 @@ from asgiref.sync import sync_to_async
 
 @sync_to_async
 def update_or_create_user(telegram_id, defaults):
-    DjangoUser = get_user_model()
-    user, created = DjangoUser.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
+    User = get_user_model()
+    user, created = User.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
     return user, created
 
 ############################
@@ -143,6 +142,28 @@ async def process_create_wallet_command(callback: CallbackQuery, state: FSMConte
     except Exception as error:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_command: {error}\n{detailed_send_message_error}")
+
+
+@user_router.callback_query(F.data == "callback_button_create_wallet_from_seed", StateFilter(default_state))
+async def process_create_wallet_from_seed_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Handler for selecting the "Create Wallet From Seed" option from the menu.
+
+        Args:
+            callback (CallbackQuery): The callback object.
+            state (FSMContext): The state of the finite state machine.
+
+        Returns:
+            None
+    """
+    try:
+        await callback.message.edit_text(LEXICON["create_seed_wallet"])
+        await state.set_state(FSMWallet.create_wallet_from_seed_add_seed)
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_create_wallet_from_seed_command: {error}\n{detailed_send_message_error}")
 
 
 @user_router.callback_query(F.data == "callback_button_connect_wallet", StateFilter(default_state))

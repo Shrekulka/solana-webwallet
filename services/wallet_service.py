@@ -6,16 +6,15 @@ from typing import Tuple, Optional, List, Dict
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from sqlalchemy import select
+# from sqlalchemy import select
 
 from config_data.config import LAMPORT_TO_SOL_RATIO
-from database.database import get_db
+# from database.database import get_db
 from external_services.solana.solana import get_sol_balance, http_client
 from keyboards.main_keyboard import main_keyboard
 from keyboards.transfer_transaction_keyboards import get_wallet_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
-from models.models import User, SolanaWallet
 from states.states import FSMWallet
 
 ########### django #########
@@ -23,17 +22,18 @@ from django.contrib.auth import get_user_model
 from applications.wallet.models import Wallet
 from asgiref.sync import sync_to_async
 
+User = get_user_model()
 
 @sync_to_async
 def get_user(telegram_id):
-    DjangoUser = get_user_model()
-    user = DjangoUser.objects.filter(telegram_id=telegram_id).first()
+    # DjangoUser = get_user_model()
+    user = User.objects.filter(telegram_id=telegram_id).first()
     return user
 
 ############################
 
 
-async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User], List[SolanaWallet]]:
+async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User], List[Wallet]]:
     """
         Retrieves user and user wallets from the database.
 
@@ -41,7 +41,7 @@ async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User]
             callback (CallbackQuery): CallbackQuery object containing information about the call.
 
         Returns:
-            Tuple[Optional[User], List[SolanaWallet]]: User object and list of user's SolanaWallet objects.
+            Tuple[Optional[User], List[Wallet]]: User object and list of user's Wallet objects.
     """
     user = None  # Инициализация переменной для пользователя
     user_wallets = []  # Инициализация переменной для списка кошельков пользователя

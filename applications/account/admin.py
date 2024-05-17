@@ -27,4 +27,7 @@ class AdminUser(UserAdmin):
         ('Telegram data', {
             'fields': ('telegram_id', 'telegram_username', 'telegram_language', 'is_bot', 'raw_data'),
         }),
+        ('Solana data', {
+            'fields': ('last_number_solana_derivation_path',),
+        }),
     )

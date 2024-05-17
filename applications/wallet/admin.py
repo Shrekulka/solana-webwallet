@@ -11,3 +11,4 @@ class WalletAdmin(CommonAdmin):
     list_filter = ['status']
     search_fields = ['user', 'name', 'description']
     date_hierarchy = 'created'
+    ordering = ['-created']

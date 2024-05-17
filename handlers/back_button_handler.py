@@ -46,6 +46,24 @@ async def process_back_button(callback: CallbackQuery, state: FSMContext) -> Non
             await state.set_state(FSMWallet.create_wallet_add_name)
             await callback.message.edit_text(LEXICON["create_new_name_wallet"],
                                              reply_markup=back_keyboard)
+
+        ############################################################################################################
+        # Если текущее состояние - добавление seed phrase для создания нового кошелька
+        if current_state == FSMWallet.create_wallet_from_seed_add_seed:
+            await state.set_state(default_state)
+            await callback.message.edit_text(LEXICON["back_to_main_menu"])
+            await callback.message.edit_reply_markup(reply_markup=main_keyboard)
+
+        # Если текущее состояние - добавление имени нового кошелька
+        elif current_state == FSMWallet.create_wallet_from_seed_add_name:
+            await state.set_state(FSMWallet.create_wallet_from_seed_add_seed)
+            await callback.message.edit_text(LEXICON["create_seed_wallet"], reply_markup=back_keyboard)
+
+        # Если текущее состояние - добавление описания нового кошелька
+        elif current_state == FSMWallet.create_wallet_from_seed_add_description:
+            await state.set_state(FSMWallet.create_wallet_from_seed_add_name)
+            await callback.message.edit_text(LEXICON["create_new_name_wallet"], reply_markup=back_keyboard)
+
         #############################################################################################################
         # Если текущее состояние - добавление адреса для подключения кошелька
         elif current_state == FSMWallet.connect_wallet_add_address:

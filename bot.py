@@ -21,9 +21,11 @@ from database.database import init_database
 from handlers import (
     user_handlers,
     create_wallet_handlers,
+    create_wallet_from_seed_handlers,
     connect_wallet_handlers,
     transfer_handlers,
-    transaction_handlers, other_handlers, back_button_handler,
+    transaction_handlers,
+    other_handlers, back_button_handler,
 )
 from logger_config import logger
 
@@ -58,6 +60,7 @@ async def main() -> None:
     # Регистрируем роутеры в диспетчере
     dp.include_router(user_handlers.user_router)
     dp.include_router(create_wallet_handlers.create_wallet_router)
+    dp.include_router(create_wallet_from_seed_handlers.create_wallet_from_seed_router)
     dp.include_router(connect_wallet_handlers.connect_wallet_router)
     dp.include_router(transfer_handlers.transfer_router)
     dp.include_router(transaction_handlers.transaction_router)

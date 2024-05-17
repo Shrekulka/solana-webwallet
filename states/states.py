@@ -8,6 +8,7 @@ class FSMWallet(StatesGroup):
         Class of states for managing the wallet interaction process.
 
         Attributes:
+            create_wallet_add_seed (State): State for adding the seed phrase for create a new wallet.
             create_wallet_add_name (State): State for adding the name of a new wallet.
             create_wallet_add_description (State): State for adding the description of a new wallet.
             connect_wallet_add_address (State): State for adding the address to connect an existing wallet.
@@ -23,6 +24,10 @@ class FSMWallet(StatesGroup):
 
     create_wallet_add_name = State()          # Состояние добавления имени нового кошелька
     create_wallet_add_description = State()   # Состояние добавления описания нового кошелька
+
+    create_wallet_from_seed_add_seed = State()          # Состояние добавления seed фразы для нового кошелька
+    create_wallet_from_seed_add_name = State()
+    create_wallet_from_seed_add_description = State()
 
     connect_wallet_add_address = State()      # Состояние добавления адреса для подключения существующего кошелька
     connect_wallet_add_name = State()         # Состояние добавления имени существующего кошелька

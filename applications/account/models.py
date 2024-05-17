@@ -42,6 +42,13 @@ class User(AbstractUser):
         blank=True,
     )
 
+    last_number_solana_derivation_path = models.PositiveIntegerField(
+        verbose_name='Last number derivation path for Solana',
+        default=None,
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         ordering = ['id']
         verbose_name = 'user'
