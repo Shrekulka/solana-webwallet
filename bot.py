@@ -25,7 +25,9 @@ from handlers import (
     connect_wallet_handlers,
     transfer_handlers,
     transaction_handlers,
-    other_handlers, back_button_handler,
+    other_handlers,
+    back_button_handler,
+    delete_wallet_handlers,
 )
 from logger_config import logger
 
@@ -66,6 +68,7 @@ async def main() -> None:
     dp.include_router(transaction_handlers.transaction_router)
     dp.include_router(other_handlers.other_router)
     dp.include_router(back_button_handler.back_button_router)
+    dp.include_router(delete_wallet_handlers.delete_wallet_router)
     # Проверяем наличие базы данных и инициализируем ее при необходимости
     await init_database()
 

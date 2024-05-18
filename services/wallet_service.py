@@ -129,6 +129,9 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
                 elif action == "transactions":
                     # Устанавливаем состояние FSM для выбора кошелька для просмотра транзакций
                     await state.set_state(FSMWallet.choose_transaction_wallet)
+                elif action == "delete":
+                    # Устанавливаем состояние FSM для выбора кошелька для удаления
+                    await state.set_state(FSMWallet.delete_wallet)
         else:
             # Если пользователь не найден или у него нет кошельков, обрабатываем эту ситуацию
             await handle_no_user_or_wallets(callback)

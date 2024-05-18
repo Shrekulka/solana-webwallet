@@ -125,6 +125,14 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
                         "<b>💰 Amount:</b> {amount_in_sol} SOL"
 }
 
+# Сообщения для удаления кошелька
+DELETE_WALLET_MESSAGE = {
+    "button_delete_confirmation": "Delete",
+    "delete_wallet_confirmation": "Delete confirmation",
+    "delete_wallet_successful": "💼 Wallet \n<i>{wallet_address}</i>\n <b>successfully</b> deleted",
+    "delete_wallet_not_successful": "💼 <b>Delete wallet \n<i>{wallet_address}</i>\n was <b>not successful</b></b>",
+}
+
 # Неизвестный ввод сообщения
 UNKNOWN_MESSAGE_INPUT = {
     "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
@@ -139,4 +147,4 @@ UNKNOWN_MESSAGE_INPUT = {
 # Объединение всех сообщений в словарь LEXICON
 LEXICON: dict[str, str] = {**CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE, **HELP_MESSAGES,
                            **BALANCE_MESSAGE, **MAIN_MENU_BUTTONS, **START_MESSAGES, **UNKNOWN_MESSAGE_INPUT,
-                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE}
+                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE, **DELETE_WALLET_MESSAGE}

@@ -49,8 +49,7 @@ transfer_router: Router = Router()
 
 @transfer_router.callback_query(F.data.startswith("wallet_address:"),
                                 StateFilter(FSMWallet.transfer_choose_sender_wallet))
-async def process_choose_sender_wallet(callback: CallbackQuery,
-                                       state: FSMContext) -> None:
+async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
         Handles the user's selection of the sender wallet for transfer.
 
@@ -83,8 +82,7 @@ async def process_choose_sender_wallet(callback: CallbackQuery,
 
 
 @transfer_router.message(StateFilter(FSMWallet.transfer_sender_private_key))
-async def process_transfer_sender_private_key(message: Message,
-                                              state: FSMContext) -> None:
+async def process_transfer_sender_private_key(message: Message, state: FSMContext) -> None:
     """
         Handles the user input of the sender's private key.
 

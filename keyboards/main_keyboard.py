@@ -48,7 +48,10 @@ button_data = [
     # Текст кнопки и данные обратного вызова для передачи токенов
     (LEXICON["token_transfer"], "callback_button_transfer"),
     # Текст кнопки и данные обратного вызова для просмотра транзакций
-    (LEXICON["transaction"], "callback_button_transaction"),]
+    (LEXICON["transaction"], "callback_button_transaction"),
+    # Текст кнопки и данные обратного вызова для удаления кошелька
+    (LEXICON["delete_wallet"], "callback_button_delete_wallet"),
+]
 
 # Создание основной клавиатуры с кнопками на основе созданных данных
 main_keyboard = create_keyboard(button_data)

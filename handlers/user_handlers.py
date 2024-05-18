@@ -233,3 +233,18 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
             None
     """
     await process_wallets_command(callback, state, "transactions")
+
+
+@user_router.callback_query(F.data == "callback_button_delete_wallet", StateFilter(default_state))
+async def process_delete_wallet(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Handles the command for delete wallet.
+
+        Args:
+            callback (CallbackQuery): CallbackQuery object containing information about the call.
+            state (FSMContext): FSMContext object for working with chat states.
+
+        Returns:
+            None
+    """
+    await process_wallets_command(callback, state, "delete")
