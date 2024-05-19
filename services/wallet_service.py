@@ -183,3 +183,32 @@ async def format_transaction_message(transaction: Dict) -> str:
     )
     # Возвращаем отформатированное сообщение о транзакции
     return transaction_message
+
+
+async def format_transaction_from_db_message(transaction: Dict) -> str:
+    """
+       Formats the transaction message.
+
+       Args:
+           transaction (dict): Transaction data.
+
+       Returns:
+           str: Formatted transaction message.
+    """
+    # Расчет суммы в SOL из лампортов
+    amount_in_sol = (transaction.pre_balances - transaction.post_balances) / LAMPORT_TO_SOL_RATIO
+    # Форматирование суммы в SOL с двумя десятичными знаками
+    formatted_amount = '{:.6f}'.format(Decimal(str(amount_in_sol)))
+    # Форматирование сообщения о транзакции с использованием лексикона
+    tr_message = LEXICON["transaction_info"].format(
+        # Форматирование идентификатора транзакции
+        transaction_id='{}...{}'.format(transaction.transaction_id[:4], transaction.transaction_id[-4:]),
+        # Форматирование счета отправителя
+        sender='{}...{}'.format(transaction.sender[:4], transaction.sender[-4:]),
+        # Форматирование счета получателя
+        recipient='{}...{}'.format(transaction.recipient[:4], transaction.recipient[-4:]),
+        # Включение суммы в SOL в отформатированное сообщение
+        amount_in_sol=formatted_amount
+    )
+    # Возвращаем отформатированное сообщение о транзакции
+    return tr_message

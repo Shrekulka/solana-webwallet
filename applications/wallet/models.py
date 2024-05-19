@@ -9,10 +9,9 @@ class Wallet(Common):
     Wallet
     """
 
-    user = models.ForeignKey(
-        verbose_name='Wallet owner',
+    user = models.ManyToManyField(
+        verbose_name='Wallet owners',
         to=get_user_model(),
-        on_delete=models.CASCADE,
         related_name='wallets',
     )
 
@@ -25,7 +24,7 @@ class Wallet(Common):
     wallet_address = models.CharField(
         verbose_name='Wallet address',
         max_length=200,
-        # unique=True,
+        unique=True,
     )
 
     description = models.CharField(
@@ -46,3 +45,76 @@ class Wallet(Common):
 
     def __str__(self):
         return self.wallet_address
+
+
+class Transaction(Common):
+    """
+    Transaction
+    """
+    wallet = models.ManyToManyField(
+        verbose_name='Wallet',
+        to=Wallet,
+        related_name='transactions',
+    )
+
+    transaction_id = models.CharField(
+        verbose_name='Transaction id',
+        max_length=200,
+        unique=True,
+    )
+
+    sender = models.CharField(
+        verbose_name='Sender',
+        max_length=200,
+        blank=True,
+    )
+
+    recipient = models.CharField(
+        verbose_name='Recipient',
+        max_length=200,
+        blank=True,
+    )
+
+    pre_balances = models.PositiveBigIntegerField(
+        verbose_name='Pre-balances',
+        blank=True,
+        null=True,
+    )
+
+    post_balances = models.PositiveBigIntegerField(
+        verbose_name='Post-balances',
+        blank=True,
+        null=True,
+    )
+
+    transaction_time = models.PositiveBigIntegerField(
+        verbose_name='Transaction time',
+        blank=True,
+        null=True,
+    )
+
+    slot = models.PositiveBigIntegerField(
+        verbose_name='Transaction slot',
+        blank=True,
+        null=True,
+    )
+
+    transaction_status = models.CharField(
+        verbose_name='Transaction status',
+        max_length=200,
+        blank=True,
+    )
+
+    transaction_err = models.CharField(
+        verbose_name='Transaction error',
+        max_length=200,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ['transaction_time']
+        verbose_name = 'transaction'
+        verbose_name_plural = 'transactions'
+
+    def __str__(self):
+        return f'id: {self.transaction_id[:4]}...{self.transaction_id[-4:]}, time: {self.transaction_time}, slot: {self.slot}'
