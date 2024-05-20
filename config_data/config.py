@@ -1,6 +1,6 @@
 # solana_wallet_telegram_bot/config_data/config.py
 
-from typing import Union, List
+from typing import Union
 from httpx import Timeout
 from pydantic.v1 import BaseSettings, SecretStr
 
@@ -26,9 +26,6 @@ TRANSACTION_HISTORY_CACHE_DURATION = 3600
 
 # Константа для определения максимального количества транзакций в истории
 TRANSACTION_LIMIT = 5
-
-# Список бирж для получения курсов криптовалют
-CRYPTO_EXCHANGES: List[str] = ["binance", "kucoin", "bitfinex"]
 
 
 class Settings(BaseSettings):

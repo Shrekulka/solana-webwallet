@@ -2,7 +2,7 @@
 
 
 # Сообщения для старта и справки
-START_MESSAGES: dict[str, str] = {
+START_MESSAGES = {
     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n\n"
               "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
@@ -11,7 +11,7 @@ START_MESSAGES: dict[str, str] = {
 }
 
 # Справочное сообщение бота
-HELP_MESSAGES: dict[str, str] = {
+HELP_MESSAGES = {
     "/help": "<b>Description of the bot functionality:</b>\n\n"
              "🔑 <b>Create wallet:</b>\n\n<i>Allows you to create a new Solana wallet."
              "After creating the wallet, you will receive a private key which you should securely store."
@@ -39,7 +39,6 @@ MAIN_MENU_BUTTONS: dict[str, str] = {
     "token_sell": "💳 Sell tokens",
     "token_transfer": "📲 Send token",
     "transaction": "📜 View transaction history",
-    "crypto_price": "💹 Price cryptocurrency",
     "delete_wallet": "🗑️ Delete wallet",
     "settings": "⚙️ Crypto wallet settings",
     "donate": "💝 Donate to the team",
@@ -52,11 +51,10 @@ OTHER_BUTTONS: dict[str, str] = {
                          "<i>To view the list of available commands, type /help 😊</i>",
     "save_wallet": "<i>Yes</i>",
     "cancel": "<i>No</i>",
-    "return_main_keyboard": "🏠 Main menu",
 }
 
 # Сообщения для создания кошелька
-CREATE_WALLET_MESSAGE: dict[str, str] = {
+CREATE_WALLET_MESSAGE = {
     "create_name_wallet": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
     "create_description_wallet": "💬 <b>Now, please enter the description for your wallet:</b>",
@@ -73,7 +71,7 @@ CREATE_WALLET_MESSAGE: dict[str, str] = {
 }
 
 # Сообщения для 'connect_wallet'
-CONNECT_WALLET_MESSAGE: dict[str, str] = {
+CONNECT_WALLET_MESSAGE = {
     "connect_wallet_address": "<b>🔑 Enter the wallet address to connect to the bot</b>",
     "connect_wallet_add_name": "<b>💼 Please enter name of your wallet</b>",
     "connect_wallet_add_description": "💬 <b>Now, please enter the description for your wallet:</b>",
@@ -85,13 +83,13 @@ CONNECT_WALLET_MESSAGE: dict[str, str] = {
 }
 
 # Сообщения для обработки команды balance
-BALANCE_MESSAGE: dict[str, str] = {
+BALANCE_MESSAGE = {
     "no_registered_wallet": "<b>🛑 You don't have a registered wallet.</b>",
     "balance_success": "<b>💰 Your wallet balance:</b> {balance} SOL"
 }
 
 # Сообщения для переноса
-TOKEN_TRANSFER_TRANSACTION_MESSAGE: dict[str, str] = {
+TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n\n"
                                          "Note: The recipient's minimum balance\n"
                                          "should be at least 0.00089784 SOL",
@@ -120,17 +118,8 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE: dict[str, str] = {
                         "<b>💰 Amount:</b> {amount_in_sol} SOL"
 }
 
-CRYPTO_PRICE_LEXICON: dict[str, str] = {
-    "crypto_price_prompt": "<b>Enter cryptocurrency symbol\n<i>(e.g., BTC for Bitcoin) 💰:</i></b>",
-    "crypto_price_result_header": "<b>Current rates for {crypto_symbol} in {currency} 📊:</b>",
-    "crypto_price_result_exchange": "<b><i>{exchange_name} 🏦:</i></b>\n",
-    "crypto_price_result_line": "<b>1 {crypto_symbol} = {price:.2f} {currency}</b>",
-    "crypto_price_error": "<b>Error retrieving cryptocurrency rates ❌</b>",
-    "no_data_available": "<b>No data available</b>"
-}
-
 # Неизвестный ввод сообщения
-UNKNOWN_MESSAGE_INPUT: dict[str, str] = {
+UNKNOWN_MESSAGE_INPUT = {
     "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
                           "Please use one of the available commands\n"
                           "or options from the menu.",
@@ -142,5 +131,5 @@ UNKNOWN_MESSAGE_INPUT: dict[str, str] = {
 
 # Объединение всех сообщений в словарь LEXICON
 LEXICON: dict[str, str] = {**CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE, **HELP_MESSAGES,
-                           **BALANCE_MESSAGE, **MAIN_MENU_BUTTONS, **START_MESSAGES, **CRYPTO_PRICE_LEXICON,
-                           **UNKNOWN_MESSAGE_INPUT, **TOKEN_TRANSFER_TRANSACTION_MESSAGE}
+                           **BALANCE_MESSAGE, **MAIN_MENU_BUTTONS, **START_MESSAGES, **UNKNOWN_MESSAGE_INPUT,
+                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE}

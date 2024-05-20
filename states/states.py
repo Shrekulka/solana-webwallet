@@ -19,7 +19,6 @@ class FSMWallet(StatesGroup):
             transfer_recipient_address (State): State for inputting the recipient's wallet address during token transfer
             transfer_amount (State): State for inputting the amount of tokens to transfer.
             choose_transaction_wallet (State): State for choosing the wallet to view transactions.
-            crypto_price_input (State):
     """
 
     create_wallet_add_name = State()          # Состояние добавления имени нового кошелька
@@ -36,5 +35,3 @@ class FSMWallet(StatesGroup):
     transfer_recipient_address = State()      # Состояние ввода адреса кошелька получателя при переводе токенов
     transfer_amount = State()                 # Состояние ввода количества токенов для передачи
     choose_transaction_wallet = State()       # Состояние выбора кошелька для просмотра транзакций
-
-    crypto_price_input = State()              # Состояние для ввода символа криптовалюты

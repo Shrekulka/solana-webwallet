@@ -98,12 +98,6 @@ async def process_back_button(callback: CallbackQuery, state: FSMContext) -> Non
             await callback.message.edit_text(LEXICON["back_to_main_menu"])
             await callback.message.edit_reply_markup(reply_markup=main_keyboard)
 
-        #############################################################################################################
-        # Если текущее состояние - ввод символа криптовалюты для получения курса
-        elif current_state == FSMWallet.crypto_price_input:
-            await state.clear()
-            await callback.message.edit_text(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
-
         # Отправляем ответ на запрос обратного вызова для подтверждения обработки
         await callback.answer()
     except Exception as e:
