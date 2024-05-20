@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config_data.config import TRANSACTION_HISTORY_CACHE_DURATION
 from external_services.solana.solana import get_sol_balance, http_client
 from lexicon.lexicon_en import LEXICON
-from models.models import SolanaWallet
+from applications.wallet.models import Wallet
 
 # Создание пустого словаря для кэширования балансов кошельков
 wallet_balances_cache: Dict[str, float] = {}
@@ -16,12 +16,12 @@ wallet_balances_cache: Dict[str, float] = {}
 cache_last_updated: float = 0.0
 
 
-async def get_wallet_keyboard(user_wallets: List[SolanaWallet]) -> InlineKeyboardMarkup:
+async def get_wallet_keyboard(user_wallets: List[Wallet]) -> InlineKeyboardMarkup:
     """
         Function for creating a keyboard with user wallets.
 
         Args:
-            user_wallets (List[SolanaWallet]): The list of user wallets.
+            user_wallets (List[Wallet]): The list of user wallets.
 
         Returns:
             InlineKeyboardMarkup: The keyboard with wallet buttons.

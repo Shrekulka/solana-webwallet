@@ -39,6 +39,8 @@ def create_keyboard(data: list) -> InlineKeyboardMarkup:
 button_data = [
     # Текст кнопки и данные обратного вызова для создания кошелька
     (LEXICON["create_wallet"], "callback_button_create_wallet"),
+    # Текст кнопки и данные обратного вызова для создания кошелька из Seed фразы
+    (LEXICON["create_wallet_from_seed"], "callback_button_create_wallet_from_seed"),
     # Текст кнопки и данные обратного вызова для подключения кошелька
     (LEXICON["connect_wallet"], "callback_button_connect_wallet"),
     # Текст кнопки и данные обратного вызова для проверки баланса
@@ -46,7 +48,10 @@ button_data = [
     # Текст кнопки и данные обратного вызова для передачи токенов
     (LEXICON["token_transfer"], "callback_button_transfer"),
     # Текст кнопки и данные обратного вызова для просмотра транзакций
-    (LEXICON["transaction"], "callback_button_transaction"),]
+    (LEXICON["transaction"], "callback_button_transaction"),
+    # Текст кнопки и данные обратного вызова для удаления кошелька
+    (LEXICON["delete_wallet"], "callback_button_delete_wallet"),
+]
 
 # Создание основной клавиатуры с кнопками на основе созданных данных
 main_keyboard = create_keyboard(button_data)

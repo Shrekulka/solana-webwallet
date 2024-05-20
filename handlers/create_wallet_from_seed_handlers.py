@@ -1,5 +1,6 @@
 # solana_wallet_telegram_bot/handlers/create_wallet_handlers.py
 
+import mnemonic
 import traceback
 
 from aiogram import Router
@@ -7,6 +8,7 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 # from sqlalchemy import select
+from solders.keypair import Keypair
 
 # from database.database import get_db
 from keyboards.back_keyboard import back_keyboard
@@ -14,8 +16,7 @@ from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from states.states import FSMWallet
-from utils.validators import is_valid_wallet_name, is_valid_wallet_description
-from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address
+from utils.validators import is_valid_wallet_name, is_valid_wallet_description, is_valid_wallet_seed_phrase
 
 ########### django #########
 from django.contrib.auth import get_user_model
@@ -30,7 +31,7 @@ def get_user(telegram_id):
     return user
 
 @sync_to_async
-def create_wallet(user, wallet_address, name, description, solana_derivation_path):
+def create_wallet(user, name, description, wallet_address, solana_derivation_path):
     wallet = Wallet.objects.create(
         wallet_address=wallet_address,
         name=name,
@@ -46,10 +47,70 @@ def create_wallet(user, wallet_address, name, description, solana_derivation_pat
 ############################
 
 # Инициализируем роутер уровня модуля
-create_wallet_router: Router = Router()
+create_wallet_from_seed_router: Router = Router()
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_name),
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_seed),
+                                        lambda message: message.text and is_valid_wallet_seed_phrase(message.text))
+async def process_wallet_seed(message: Message, state: FSMContext) -> None:
+    """
+        Handler for entering the wallet seed phrase.
+
+        Args:
+            message (Message): The incoming message.
+            state (FSMContext): The state of the finite state machine.
+
+        Returns:
+            None
+    """
+    try:
+        seed_phrase = message.text
+
+        await state.update_data(seed_phrase=seed_phrase)
+
+        # Получаем данные из состояния
+        data = await state.get_data()
+
+        # Извлекаем seed фразу из данных
+        seed_phrase = data.get("seed_phrase")
+
+        # Отправляем подтверждение с введенной seed фразой
+        await message.answer(text=LEXICON["wallet_seed_confirmation"].format(seed_phrase=seed_phrase))
+
+        # Запрашиваем ввод описания кошелька
+        await message.answer(text=LEXICON["create_name_wallet"], reply_markup=back_keyboard)
+
+        # Переходим к добавлению описания кошелька
+        await state.set_state(FSMWallet.create_wallet_from_seed_add_name)
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in process_wallet_seed: {e}\n{detailed_error_traceback}")
+
+
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_seed))
+async def process_invalid_wallet_seed(message: Message, state: FSMContext) -> None:
+    """
+        Handler for incorrect wallet seed input.
+
+        Args:
+            message (Message): The incoming message.
+            state (FSMContext): The state of the finite state machine.
+
+        Returns:
+            None
+    """
+    try:
+        # Отправляем сообщение о некорректной seed фразе
+        await message.answer(text=LEXICON["invalid_wallet_seed"])
+
+        # Запрашиваем ввод имени кошелька заново
+        await message.answer(text=LEXICON["create_seed_wallet"], reply_markup=back_keyboard)
+    except Exception as e:
+        detailed_error_traceback = traceback.format_exc()
+        logger.error(f"Error in process_invalid_wallet_seed: {e}\n{detailed_error_traceback}")
+
+
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_name),
                               lambda message: message.text and is_valid_wallet_name(message.text))
 async def process_wallet_name(message: Message, state: FSMContext) -> None:
     """
@@ -79,13 +140,13 @@ async def process_wallet_name(message: Message, state: FSMContext) -> None:
         await message.answer(text=LEXICON["create_description_wallet"], reply_markup=back_keyboard)
 
         # Переходим к добавлению описания кошелька
-        await state.set_state(FSMWallet.create_wallet_add_description)
+        await state.set_state(FSMWallet.create_wallet_from_seed_add_description)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_wallet_name: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_name))
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_name))
 async def process_invalid_wallet_name(message: Message, state: FSMContext) -> None:
     """
         Handler for incorrect wallet name input.
@@ -108,7 +169,7 @@ async def process_invalid_wallet_name(message: Message, state: FSMContext) -> No
         logger.error(f"Error in process_invalid_wallet_name: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_description),
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_description),
                               lambda message: message.text and is_valid_wallet_description(message.text))
 async def process_wallet_description(message: Message, state: FSMContext) -> None:
     """
@@ -122,24 +183,52 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
             None
     """
     try:
-        # Обновляем данные состояния, добавляя введенное описание
         await state.update_data(description=message.text)
-        # Получаем данные из состояния
         data = await state.get_data()
-        # Извлекаем имя кошелька из данных
+        seed_phrase = data.get("seed_phrase")
         name = data.get("wallet_name")
-        # Извлекаем описание кошелька из данных
         description = data.get("description")
 
         user = await get_user(telegram_id=message.from_user.id)
-        wallet_address, private_key, seed_phrase = await create_solana_wallet()
+
+        user_wallets = []
+
+        async for w in Wallet.objects.filter(user=user):
+            user_wallets.append(w.wallet_address)
+
+        # last_number_solana_derivation_path = 0
+
+        # # если int значит уже была запись в user.last_number_solana_derivation_path
+        # if isinstance(user.last_number_solana_derivation_path, int):
+        #     last_number_solana_derivation_path = user.last_number_solana_derivation_path + 1
+        if user.last_solana_derivation_path:
+            derivation_path = user.last_solana_derivation_path
+            derivation_path_list = derivation_path.split('/')
+            last_el = derivation_path_list[-1]
+            index = int(last_el[0]) + 1
+
+        while True:
+            solana_derivation_path = f"m/44'/501'/0'/{index}'"
+
+            mnemo = mnemonic.Mnemonic("english")
+            seed = mnemo.to_seed(seed_phrase, passphrase="")
+            keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
+            wallet_address = str(keypair.pubkey())
+            private_key = keypair.secret().hex()
+
+            if wallet_address not in user_wallets:
+                break
+            else:
+                index += 1
+
         wallet = await create_wallet(
             user=user,
-            wallet_address=wallet_address,
             name=name,
             description=description,
-            solana_derivation_path = "m/44'/501'/0'/0'",
+            wallet_address=wallet_address,
+            solana_derivation_path=solana_derivation_path,
         )
+
         if wallet:
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
 
@@ -159,7 +248,7 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         logger.error(f"Error in process_wallet_description: {e}\n{detailed_error_traceback}")
 
 
-@create_wallet_router.message(StateFilter(FSMWallet.create_wallet_add_description))
+@create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_description))
 async def process_invalid_wallet_description(message: Message, state: FSMContext) -> None:
     """
         Handler for invalid wallet description input.

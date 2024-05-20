@@ -48,3 +48,21 @@ def is_valid_wallet_description(description: str) -> bool:
 
         # Проверка соответствия регулярному выражению
         return bool(re.match(pattern, description))
+
+
+def is_valid_wallet_seed_phrase(seed_phrase: str) -> bool:
+    """
+        Checks the validity of a wallet seed phrase.
+
+        Args:
+            seed_phrase (str): The seed phrase of the wallet.
+
+        Returns:
+            bool: True if the wallet seed phrase is valid, False otherwise.
+    """
+    seed_phrase_list = seed_phrase.strip().split()
+
+    if len(seed_phrase_list) in [12, 24]:
+        return True
+    else:
+        return False

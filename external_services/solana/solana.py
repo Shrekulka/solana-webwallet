@@ -6,6 +6,7 @@ from typing import Tuple, Dict, List, Optional, Any
 
 import base58
 import httpx
+import mnemonic
 from solana.rpc.api import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
@@ -22,29 +23,28 @@ from logger_config import logger
 http_client = AsyncClient(SOLANA_NODE_URL, timeout=timeout_settings)
 
 # Создаем словарь для кэширования результатов запросов истории транзакций
-transaction_history_cache: Dict[str, Tuple[List, float]] = {}
+# transaction_history_cache: Dict[str, Tuple[List, float]] = {}
 
 
-async def create_solana_wallet() -> Tuple[str, str]:
+async def create_solana_wallet() -> Tuple[str, str, str]:
     """
         Generate a new Solana wallet.
 
         Returns:
-            Tuple[str, str]: A tuple containing the public address and private key of the generated wallet.
+            Tuple[str, str, str]: A tuple containing the public address and private key of the generated wallet.
 
         Raises:
             Exception: If there's an error during the wallet creation process.
     """
     try:
-        # Генерация нового кошелька
-        keypair = Keypair()
-        # Получение публичного адреса кошелька
+        solana_derivation_path = "m/44'/501'/0'/0'"
+        mnemo = mnemonic.Mnemonic("english")
+        words = mnemo.generate(strength=128) # strength=128 for 12 words, strength=256 for 24 words
+        seed = mnemo.to_seed(words, passphrase="")
+        keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
         wallet_address = str(keypair.pubkey())
-        # Получение приватного ключа кошелька и преобразование в шестнадцатеричное представление
         private_key = keypair.secret().hex()
-
-        # Возвращаем публичный адрес кошелька и приватный ключ кошелька как кортеж
-        return wallet_address, private_key
+        return wallet_address, private_key, words
 
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
@@ -277,7 +277,7 @@ def decode_solana_address(encoded_address: str) -> Optional[Any]:
         return None
 
 
-async def get_transaction_history(wallet_address: str) -> list[dict]:
+async def get_transaction_history(wallet_address: str, transaction_id_before: str | None, transaction_limit: int) -> list[dict]:
     """
         Retrieves transaction history for a given Solana wallet address.
 
@@ -288,14 +288,14 @@ async def get_transaction_history(wallet_address: str) -> list[dict]:
         list[dict]: A list of dictionaries representing transactions in JSON format.
     """
     try:
-        # Проверяем, были ли уже получены данные для этого адреса кошелька и время их сохранения
-        cached_data = transaction_history_cache.get(wallet_address)
-        if cached_data is not None:
-            transaction_history, cache_time = cached_data
-            # Проверяем, не истекло ли время действия кеша
-            if time.time() - cache_time <= TRANSACTION_HISTORY_CACHE_DURATION:
-                # Возвращаем кэшированные данные
-                return transaction_history
+        # # Проверяем, были ли уже получены данные для этого адреса кошелька и время их сохранения
+        # cached_data = transaction_history_cache.get(wallet_address)
+        # if cached_data is not None:
+        #     transaction_history, cache_time = cached_data
+        #     # Проверяем, не истекло ли время действия кеша
+        #     if time.time() - cache_time <= TRANSACTION_HISTORY_CACHE_DURATION:
+        #         # Возвращаем кэшированные данные
+        #         return transaction_history
 
         # Получение истории транзакций кошелька
         transaction_history = []
@@ -308,7 +308,8 @@ async def get_transaction_history(wallet_address: str) -> list[dict]:
         try:
             # Получение истории транзакций для текущего адреса
             signature_statuses = (
-                await http_client.get_signatures_for_address(pubkey, limit=TRANSACTION_LIMIT)
+                # await http_client.get_signatures_for_address(pubkey, limit=TRANSACTION_LIMIT)
+                await http_client.get_signatures_for_address(pubkey, before=transaction_id_before, limit=transaction_limit)
             ).value
 
             # Проходим по всем статусам подписей в результате
@@ -319,7 +320,7 @@ async def get_transaction_history(wallet_address: str) -> list[dict]:
                 transaction_history.append(transaction)
 
             # Кэшируем полученные данные для последующих запросов
-            transaction_history_cache[wallet_address] = (transaction_history, time.time())
+            # transaction_history_cache[wallet_address] = (transaction_history, time.time())
 
             # Возвращаем список истории транзакций
             return transaction_history
