@@ -11,6 +11,7 @@ from sqlalchemy import select
 
 from database.database import get_db
 from keyboards.main_keyboard import main_keyboard
+from keyboards.back_keyboard import back_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from models.models import User
@@ -198,3 +199,27 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
             None
     """
     await process_wallets_command(callback, state, "transactions")
+
+
+@user_router.callback_query(F.data == "callback_button_crypto_price", StateFilter(default_state))
+async def process_crypto_price_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Processes a command to fetch cryptocurrency exchange rate.
+
+        Args:
+        callback (CallbackQuery): The CallbackQuery object containing information about the call.
+        state (FSMContext): The FSMContext object for working with chat states.
+
+        Returns:
+        None
+    """
+    try:
+        # Редактируем сообщение, чтобы запросить символ криптовалюты
+        await callback.message.edit_text(LEXICON["crypto_price_prompt"], reply_markup=back_keyboard)
+        # Устанавливаем состояние FSM для обработки ввода символа криптовалюты
+        await state.set_state(FSMWallet.crypto_price_input)
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_crypto_price_command: {error}\n{detailed_send_message_error}")

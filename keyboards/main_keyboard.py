@@ -28,10 +28,10 @@ def create_keyboard(data: list) -> InlineKeyboardMarkup:
         Returns:
             InlineKeyboardMarkup: The created keyboard with inline buttons.
     """
-    buttons = []                                          # Создание пустого списка для кнопок
-    for text, callback_data in data:                      # Итерация по данным для кнопок
-        button = create_button(text, callback_data)       # Создание инлайн-кнопки
-        buttons.append([button])                          # Добавление кнопки в список кнопок
+    buttons = []  # Создание пустого списка для кнопок
+    for text, callback_data in data:  # Итерация по данным для кнопок
+        button = create_button(text, callback_data)  # Создание инлайн-кнопки
+        buttons.append([button])  # Добавление кнопки в список кнопок
     return InlineKeyboardMarkup(inline_keyboard=buttons)  # Создание клавиатуры из списка кнопок
 
 
@@ -46,7 +46,9 @@ button_data = [
     # Текст кнопки и данные обратного вызова для передачи токенов
     (LEXICON["token_transfer"], "callback_button_transfer"),
     # Текст кнопки и данные обратного вызова для просмотра транзакций
-    (LEXICON["transaction"], "callback_button_transaction"),]
+    (LEXICON["transaction"], "callback_button_transaction"),
+    # Текст кнопки и данные обратного вызова для курса криптовалюты
+    (LEXICON["crypto_price"], "callback_button_crypto_price"), ]
 
 # Создание основной клавиатуры с кнопками на основе созданных данных
 main_keyboard = create_keyboard(button_data)
