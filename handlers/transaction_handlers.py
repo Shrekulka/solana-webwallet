@@ -118,7 +118,7 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
         tr_from_db_time_list = [tr.transaction_time async for tr in tr_history_from_db]
 
         if not tr_from_db_time_list:
-            # если в бд нет трансакций, запросим из блокчейна 100 последних
+            # если в бд нет трансакций то запросим из блокчейна 100 последних
             transaction_limit = transaction_max_limit
 
         while transaction_max_limit > 0:

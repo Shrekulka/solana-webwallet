@@ -30,9 +30,9 @@ class TransactionAdmin(CommonAdmin):
 
         if obj.sender in wallet_address_list:
             wallet = obj.wallet.filter(wallet_address=obj.sender).first()
-            res_sender = f'&ensp;&ensp;<a href="/admin/wallet/wallet/{wallet.id}/change/" target="_blank">{format_sender}</a>'
+            res_sender = f'&ensp;&ensp;&ensp;<a href="/admin/wallet/wallet/{wallet.id}/change/" target="_blank">{format_sender}</a>'
         else:
-            res_sender = '&ensp;&ensp;' + format_sender
+            res_sender = '&ensp;&ensp;&ensp;' + format_sender
 
         if obj.recipient in wallet_address_list:
             wallet = obj.wallet.filter(wallet_address=obj.recipient).first()
@@ -41,7 +41,7 @@ class TransactionAdmin(CommonAdmin):
             res_recipient = format_recipient
 
         return mark_safe(res_sender + '&ensp;|&ensp;' + res_recipient)
-    get_wallet.short_description = 'wallet: sender | recipient'
+    get_wallet.short_description = 'wallets: sender | recipient'
 
     def get_amount(self, obj):
         reverse = ''

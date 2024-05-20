@@ -42,12 +42,13 @@ class User(AbstractUser):
         blank=True,
     )
 
-    last_number_solana_derivation_path = models.PositiveIntegerField(
-        verbose_name='Last number derivation path for Solana',
-        default=None,
-        null=True,
+    last_solana_derivation_path = models.CharField(
+        verbose_name='Last Solana derivation path',
+        help_text='Will be used to create a new wallet',
+        max_length=50,
         blank=True,
     )
+
 
     class Meta:
         ordering = ['id']

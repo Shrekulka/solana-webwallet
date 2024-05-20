@@ -31,16 +31,16 @@ def get_user(telegram_id):
     return user
 
 @sync_to_async
-def create_wallet(user, name, description, wallet_address, last_number_solana_derivation_path):
+def create_wallet(user, name, description, wallet_address, solana_derivation_path):
     wallet = Wallet.objects.create(
-        user=user,
         wallet_address=wallet_address,
         name=name,
         description=description,
-        solana_derivation_path_number=last_number_solana_derivation_path,
+        solana_derivation_path=solana_derivation_path,
     )
     if wallet:
-        user.last_number_solana_derivation_path = last_number_solana_derivation_path
+        wallet.user.set([user])
+        user.last_solana_derivation_path = solana_derivation_path
         user.save()
     return wallet
 
@@ -196,14 +196,19 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         async for w in Wallet.objects.filter(user=user):
             user_wallets.append(w.wallet_address)
 
-        last_number_solana_derivation_path = 0
+        # last_number_solana_derivation_path = 0
 
-        # если int значит уже была запись в user.last_number_solana_derivation_path
-        if isinstance(user.last_number_solana_derivation_path, int):
-            last_number_solana_derivation_path = user.last_number_solana_derivation_path + 1
+        # # если int значит уже была запись в user.last_number_solana_derivation_path
+        # if isinstance(user.last_number_solana_derivation_path, int):
+        #     last_number_solana_derivation_path = user.last_number_solana_derivation_path + 1
+        if user.last_solana_derivation_path:
+            derivation_path = user.last_solana_derivation_path
+            derivation_path_list = derivation_path.split('/')
+            last_el = derivation_path_list[-1]
+            index = int(last_el[0]) + 1
 
         while True:
-            solana_derivation_path = f"m/44'/501'/0'/{last_number_solana_derivation_path}'"
+            solana_derivation_path = f"m/44'/501'/0'/{index}'"
 
             mnemo = mnemonic.Mnemonic("english")
             seed = mnemo.to_seed(seed_phrase, passphrase="")
@@ -214,14 +219,14 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
             if wallet_address not in user_wallets:
                 break
             else:
-                last_number_solana_derivation_path += 1
+                index += 1
 
         wallet = await create_wallet(
             user=user,
             name=name,
             description=description,
             wallet_address=wallet_address,
-            last_number_solana_derivation_path=last_number_solana_derivation_path,
+            solana_derivation_path=solana_derivation_path,
         )
 
         if wallet:

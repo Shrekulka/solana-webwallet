@@ -33,9 +33,10 @@ class Wallet(Common):
         blank=True,
     )
 
-    solana_derivation_path_number = models.PositiveIntegerField(
-        verbose_name='Number of Solana derivation path',
-        default=0,
+    solana_derivation_path = models.CharField(
+        verbose_name='Solana derivation path',
+        max_length=100,
+        blank=True,
     )
 
     class Meta:

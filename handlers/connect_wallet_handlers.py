@@ -32,7 +32,12 @@ def get_user(telegram_id):
 
 @sync_to_async
 def create_wallet(user, wallet_address, name, description):
-    wallet = Wallet.objects.create(user=user, wallet_address=wallet_address, name=name, description=description)
+    wallet = Wallet.objects.create(
+        wallet_address=wallet_address,
+        name=name,
+        description=description,
+    )
+    wallet.user.set([user])
     return wallet
 
 ############################

@@ -41,6 +41,14 @@ def get_wallet(wallet_address):
     wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
     return wallet
 
+
+@sync_to_async
+def update_wallet(wallet_address, solana_derivation_path):
+    wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
+    wallet.solana_derivation_path = solana_derivation_path
+    wallet.save()
+    return wallet
+
 ############################
 
 # Инициализируем роутер уровня модуля
@@ -66,7 +74,7 @@ async def process_choose_sender_wallet(callback: CallbackQuery, state: FSMContex
 
         await state.update_data(
             sender_address=wallet.wallet_address,
-            solana_derivation_path_number=wallet.solana_derivation_path_number)
+            solana_derivation_path=wallet.solana_derivation_path)
 
         await callback.message.edit_text(LEXICON["transfer_sender_private_key_prompt"], reply_markup=back_keyboard)
 
@@ -99,8 +107,9 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
         message_text = message.text.strip()
 
         data = await state.get_data()
-        # Извлекаем адрес отправителя из данных состояния.
-        solana_derivation_path_number = data.get("solana_derivation_path_number")
+        # Извлекаем данные отправителя из данных состояния.
+        sender_address = data.get("sender_address")
+        solana_derivation_path = data.get("solana_derivation_path")
 
         if message_text:
             if len(message_text.split()) == 1:
@@ -110,11 +119,26 @@ async def process_transfer_sender_private_key(message: Message, state: FSMContex
 
         if seed_phrase:
             if is_valid_wallet_seed_phrase(seed_phrase):
-                solana_derivation_path = f"m/44'/501'/0'/{solana_derivation_path_number}'"
                 mnemo = Mnemonic("english")
                 seed = mnemo.to_seed(seed_phrase, passphrase="")
-                keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
-                private_key = keypair.secret().hex()
+                if solana_derivation_path:
+                    keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
+                    private_key = keypair.secret().hex()
+                else:
+                    for i in range(100):
+                        solana_derivation_path = f"m/44'/501'/0'/{i}'"
+                        i += 1
+                        keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
+                        address = str(keypair.pubkey())
+                        if address == sender_address:
+                            private_key = keypair.secret().hex()
+                            await update_wallet(sender_address, solana_derivation_path)
+                            break
+
+                    if not private_key:
+                        logger.error("Could not get the private_key from this seed phrase")
+                        return None
+
             else:
                 sent_message = await message.answer(LEXICON["invalid_seed_phrase"], reply_markup=None)
                 await asyncio.sleep(1)

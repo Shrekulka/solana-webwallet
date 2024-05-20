@@ -30,10 +30,16 @@ def get_user(telegram_id):
     return user
 
 @sync_to_async
-def create_wallet(user, wallet_address, name, description):
-    wallet = Wallet.objects.create(user=user, wallet_address=wallet_address, name=name, description=description)
+def create_wallet(user, wallet_address, name, description, solana_derivation_path):
+    wallet = Wallet.objects.create(
+        wallet_address=wallet_address,
+        name=name,
+        description=description,
+        solana_derivation_path=solana_derivation_path,
+    )
     if wallet:
-        user.last_number_solana_derivation_path = 0
+        wallet.user.set([user])
+        user.last_solana_derivation_path = solana_derivation_path
         user.save()
     return wallet
 
@@ -127,7 +133,13 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
 
         user = await get_user(telegram_id=message.from_user.id)
         wallet_address, private_key, seed_phrase = await create_solana_wallet()
-        wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
+        wallet = await create_wallet(
+            user=user,
+            wallet_address=wallet_address,
+            name=name,
+            description=description,
+            solana_derivation_path = "m/44'/501'/0'/0'",
+        )
         if wallet:
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
 
