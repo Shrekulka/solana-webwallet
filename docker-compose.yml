@@ -1,0 +1,92 @@
+# docker-compose -f docker-compose.yml up -d
+# docker-compose -f docker-compose.yml down -v
+# подключиться к контейнеру созданной бд можно командой:
+# docker exec -it freelance_postgres psql --username=freelance --dbname=freelance
+# данные контейнеров храняться в папке tmp в корне проекта
+# если будет ошибка то можно запустить комманду раздельно docker compose, например:
+# docker compose -f docker-compose.yml up
+# https://github.com/amerkurev/django-docker-template
+
+version: '3.9'
+
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - './var/postgres-data:/var/lib/postgresql/data/'
+
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/Dockerfile
+    image: django-docker
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - "staticfiles-data:/var/www/static"
+      - "media-data:/var/www/media"
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.development.rule=Host(`127.0.0.1`) || Host(`localhost`)"
+      - "traefik.http.routers.development.entrypoints=web"
+      - "traefik.http.routers.development.priority=1"
+
+  nginx:
+    image: nginx:1.23-alpine
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: media-data
+        target: /usr/share/nginx/html/media
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: staticfiles-data
+        target: /usr/share/nginx/html/static
+        read_only: true
+        volume:
+          nocopy: true
+    depends_on:
+      - django
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.staticfiles.rule=PathPrefix(`/static/`) || PathPrefix(`/media/`)"
+      - "traefik.http.routers.staticfiles.entrypoints=web"
+      - "traefik.http.routers.staticfiles.priority=2"
+
+  reverse-proxy:
+    image: traefik:v2.9
+    env_file: .env
+    restart: unless-stopped
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.le-resolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.le-resolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.le-resolver.acme.email=admin@yourdomain.com"
+      - "--certificatesresolvers.le-resolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+volumes:
+  postgres-data:
+  staticfiles-data:
+  media-data:

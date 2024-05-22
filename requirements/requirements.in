@@ -9,6 +9,7 @@ sqlalchemy
 aiosqlite
 asyncpg
 python-dotenv
+psycopg2-binary
 base58
 django
 django-model-utils
