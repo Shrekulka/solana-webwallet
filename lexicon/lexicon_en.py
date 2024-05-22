@@ -40,6 +40,7 @@ MAIN_MENU_BUTTONS: dict[str, str] = {
     "token_sell": "💳 Sell tokens",
     "token_transfer": "📲 Send token",
     "transaction": "📜 View transaction history",
+    "crypto_price": "💹 Price cryptocurrency",
     "delete_wallet": "🗑️ Delete wallet",
     "settings": "⚙️ Crypto wallet settings",
     "donate": "💝 Donate to the team",
@@ -52,6 +53,7 @@ OTHER_BUTTONS: dict[str, str] = {
                          "<i>To view the list of available commands, type /help 😊</i>",
     "save_wallet": "<i>Yes</i>",
     "cancel": "<i>No</i>",
+    "return_main_keyboard": "🏠 Main menu",
 }
 
 # Сообщения для создания кошелька
@@ -59,19 +61,19 @@ CREATE_WALLET_MESSAGE = {
     "create_name_wallet": "💼 <b>Please enter the name for your wallet:</b>",
     "wallet_name_confirmation": "💼 <b>Your wallet name:</b> {wallet_name}",
     "create_description_wallet": "💬 <b>Now, please enter the description for your wallet:</b>",
-    "wallet_created_successfully": "🎉 <b>Wallet created successfully!</b>\n"
-                                   "<b><i>Wallet name:</i> {wallet_name}</b>\n"
-                                   "<b><i>Wallet description:</i> {wallet_description}</b>\n"
-                                   "<b><i>Wallet address:</i> {wallet_address}</b>\n"
-                                   "<b><i>Private key:</i> {private_key}</b>\n"
-                                   "<b><i>Seed phrase:</i> {seed_phrase}</b>\n",
+    "wallet_created_successfully": "🎉 <b>Wallet created successfully!</b>\n\n"
+                                   "<b><i>Wallet name:</i>\n {wallet_name}</b>\n\n"
+                                   "<b><i>Wallet description:</i>\n {wallet_description}</b>\n\n"
+                                   "<b><i>Wallet address:</i>\n {wallet_address}</b>\n\n"
+                                   "<b><i>Private key:</i>\n {private_key}</b>\n\n"
+                                   "<b><i>Seed phrase:</i>\n {seed_phrase}</b>\n\n",
     "invalid_wallet_name": "❌ <b>Invalid wallet name entered.</b>\n"
                            "Please enter a valid name for your wallet.",
     "invalid_wallet_description": "❌ <b>Invalid wallet description entered.</b>\n"
                                   "Please enter a valid description for your wallet.",
     "create_new_name_wallet": "💼 <b>Enter a new name for the connected wallet:</b>",
     "create_seed_wallet": "💼 <b>Please enter your secret seed phrase:</b>",
-    "wallet_seed_confirmation": "💼 <b>Your wallet seed phrase:</b> {seed_phrase}",
+    "wallet_seed_confirmation": "💼 <b>Your wallet seed phrase:\n {seed_phrase}</b>\n",
     "invalid_wallet_seed": "❌ <b>Invalid wallet seed entered.</b>\n"
                            "Please enter a valid seed for your wallet.",
 }
@@ -133,6 +135,15 @@ DELETE_WALLET_MESSAGE = {
     "delete_wallet_not_successful": "💼 <b>Delete wallet \n<i>{wallet_address}</i>\n was <b>not successful</b></b>",
 }
 
+CRYPTO_PRICE_LEXICON: dict[str, str] = {
+    "crypto_price_prompt": "<b>Enter cryptocurrency symbol\n<i>(e.g., BTC for Bitcoin) 💰:</i></b>",
+    "crypto_price_result_header": "<b>Current rates for {crypto_symbol} in {currency} 📊:</b>",
+    "crypto_price_result_exchange": "<b><i>{exchange_name} 🏦:</i></b>\n",
+    "crypto_price_result_line": "<b>1 {crypto_symbol} = {price:.2f} {currency}</b>",
+    "crypto_price_error": "<b>Error retrieving cryptocurrency rates ❌</b>",
+    "no_data_available": "<b>No data available</b>"
+}
+
 # Неизвестный ввод сообщения
 UNKNOWN_MESSAGE_INPUT = {
     "unexpected_message": "<b>❓ Unknown command or message.</b>\n\n"
@@ -147,4 +158,4 @@ UNKNOWN_MESSAGE_INPUT = {
 # Объединение всех сообщений в словарь LEXICON
 LEXICON: dict[str, str] = {**CREATE_WALLET_MESSAGE, **OTHER_BUTTONS, **CONNECT_WALLET_MESSAGE, **HELP_MESSAGES,
                            **BALANCE_MESSAGE, **MAIN_MENU_BUTTONS, **START_MESSAGES, **UNKNOWN_MESSAGE_INPUT,
-                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE, **DELETE_WALLET_MESSAGE}
+                           **TOKEN_TRANSFER_TRANSACTION_MESSAGE, **CRYPTO_PRICE_LEXICON, **DELETE_WALLET_MESSAGE}

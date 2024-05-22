@@ -6,28 +6,31 @@ from aiogram import Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-# from sqlalchemy import select
+from asgiref.sync import sync_to_async
+########### django #########
+from django.contrib.auth import get_user_model
 
+from applications.wallet.models import Wallet
+from external_services.solana.solana import create_solana_wallet
 # from database.database import get_db
 from keyboards.back_keyboard import back_keyboard
-from keyboards.main_keyboard import main_keyboard
+from keyboards.return_main_keyboard import return_main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description
-from external_services.solana.solana import create_solana_wallet, is_valid_wallet_address
-
-########### django #########
-from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
-from asgiref.sync import sync_to_async
 
 
+# from sqlalchemy import select
+
+# Django
+########################################################################################################################
 @sync_to_async
 def get_user(telegram_id):
     User = get_user_model()
     user = User.objects.filter(telegram_id=telegram_id).first()
     return user
+
 
 @sync_to_async
 def create_wallet(user, wallet_address, name, description, solana_derivation_path):
@@ -43,7 +46,11 @@ def create_wallet(user, wallet_address, name, description, solana_derivation_pat
         user.save()
     return wallet
 
-############################
+
+########################################################################################################################
+
+# Telegram
+########################################################################################################################
 
 # Инициализируем роутер уровня модуля
 create_wallet_router: Router = Router()
@@ -138,7 +145,7 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
             wallet_address=wallet_address,
             name=name,
             description=description,
-            solana_derivation_path = "m/44'/501'/0'/0'",
+            solana_derivation_path="m/44'/501'/0'/0'",
         )
         if wallet:
             await state.update_data(sender_address=wallet.wallet_address, sender_private_key=private_key)
@@ -149,11 +156,7 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
                                                           wallet_description=wallet.description,
                                                           wallet_address=wallet.wallet_address,
                                                           private_key=private_key,
-                                                          seed_phrase=seed_phrase))
-        # Очищаем состояние после добавления кошелька
-        await state.clear()
-        # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
-        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
+                                                          seed_phrase=seed_phrase), reply_markup=return_main_keyboard)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_wallet_description: {e}\n{detailed_error_traceback}")
@@ -179,3 +182,4 @@ async def process_invalid_wallet_description(message: Message, state: FSMContext
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_invalid_wallet_description: {e}\n{detailed_error_traceback}")
+########################################################################################################################

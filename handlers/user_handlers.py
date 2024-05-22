@@ -7,29 +7,36 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery
-# from sqlalchemy import select
+from asgiref.sync import sync_to_async
+########### django #########
+from django.contrib.auth import get_user_model
 
+from config_data.config import SOLANA_NODE_URL
 # from database.database import get_db
 from keyboards.main_keyboard import main_keyboard
+from keyboards.return_main_keyboard import return_main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
-from config_data.config import SOLANA_NODE_URL
-
-########### django #########
-from django.contrib.auth import get_user_model
-from asgiref.sync import sync_to_async
 
 
+# from sqlalchemy import select
+
+
+# Django
+########################################################################################################################
 @sync_to_async
 def update_or_create_user(telegram_id, defaults):
     User = get_user_model()
     user, created = User.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
     return user, created
 
-############################
 
+########################################################################################################################
+
+# Telegram
+########################################################################################################################
 # Инициализируем роутер уровня модуля
 user_router: Router = Router()
 
@@ -120,6 +127,8 @@ async def process_unexpected_input(message: Message) -> None:
         logger.error(f"Error in process_unexpected_input: {error}\n{detailed_send_message_error}")
 
 
+########################################################################################################################
+
 @user_router.callback_query(F.data == "callback_button_create_wallet", StateFilter(default_state))
 async def process_create_wallet_command(callback: CallbackQuery, state: FSMContext) -> None:
     """
@@ -134,7 +143,7 @@ async def process_create_wallet_command(callback: CallbackQuery, state: FSMConte
     """
     try:
         # Отправляем сообщение с просьбой ввести имя для кошелька
-        await callback.message.edit_text(LEXICON["create_name_wallet"])
+        await callback.message.edit_text(LEXICON["create_name_wallet"], reply_markup=return_main_keyboard)
         # Переход в состояние добавления имени кошелька
         await state.set_state(FSMWallet.create_wallet_add_name)
         # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
@@ -143,6 +152,8 @@ async def process_create_wallet_command(callback: CallbackQuery, state: FSMConte
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_command: {error}\n{detailed_send_message_error}")
 
+
+########################################################################################################################
 
 @user_router.callback_query(F.data == "callback_button_create_wallet_from_seed", StateFilter(default_state))
 async def process_create_wallet_from_seed_command(callback: CallbackQuery, state: FSMContext) -> None:
@@ -165,6 +176,8 @@ async def process_create_wallet_from_seed_command(callback: CallbackQuery, state
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_from_seed_command: {error}\n{detailed_send_message_error}")
 
+
+########################################################################################################################
 
 @user_router.callback_query(F.data == "callback_button_connect_wallet", StateFilter(default_state))
 async def process_connect_wallet_command(callback: CallbackQuery, state: FSMContext) -> None:
@@ -190,6 +203,8 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
         logger.error(f"Error in process_connect_wallet_command: {error}\n{detailed_send_message_error}")
 
 
+########################################################################################################################
+
 @user_router.callback_query(F.data == "callback_button_transfer", StateFilter(default_state))
 async def process_transfer_token_command(callback: CallbackQuery, state: FSMContext) -> None:
     """
@@ -204,6 +219,8 @@ async def process_transfer_token_command(callback: CallbackQuery, state: FSMCont
     """
     await process_wallets_command(callback, state, "transfer")
 
+
+########################################################################################################################
 
 @user_router.callback_query(F.data == "callback_button_balance", StateFilter(default_state))
 async def process_balance_command(callback: CallbackQuery, state: FSMContext) -> None:
@@ -220,6 +237,8 @@ async def process_balance_command(callback: CallbackQuery, state: FSMContext) ->
     await process_wallets_command(callback, state, "balance")
 
 
+########################################################################################################################
+
 @user_router.callback_query(F.data == "callback_button_transaction", StateFilter(default_state))
 async def process_transactions_command(callback: CallbackQuery, state: FSMContext) -> None:
     """
@@ -235,6 +254,8 @@ async def process_transactions_command(callback: CallbackQuery, state: FSMContex
     await process_wallets_command(callback, state, "transactions")
 
 
+########################################################################################################################
+
 @user_router.callback_query(F.data == "callback_button_delete_wallet", StateFilter(default_state))
 async def process_delete_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
@@ -248,3 +269,32 @@ async def process_delete_wallet(callback: CallbackQuery, state: FSMContext) -> N
             None
     """
     await process_wallets_command(callback, state, "delete")
+
+
+########################################################################################################################
+
+@user_router.callback_query(F.data == "callback_button_crypto_price", StateFilter(default_state))
+async def process_crypto_price_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Processes a command to fetch cryptocurrency exchange rate.
+
+        Args:
+        callback (CallbackQuery): The CallbackQuery object containing information about the call.
+        state (FSMContext): The FSMContext object for working with chat states.
+
+        Returns:
+        None
+    """
+    try:
+        logger.info("You are in def process_crypto_price_command!!!")
+        # Редактируем сообщение, чтобы запросить символ криптовалюты
+        await callback.message.edit_text(LEXICON["crypto_price_prompt"], reply_markup=return_main_keyboard)
+        # Устанавливаем состояние FSM для обработки ввода символа криптовалюты
+        await state.set_state(FSMWallet.crypto_price_input)
+        logger.info(f"State set to: {await state.get_state()}")
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_crypto_price_command: {error}\n{detailed_send_message_error}")
+########################################################################################################################

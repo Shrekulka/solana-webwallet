@@ -1,15 +1,19 @@
 # solana_wallet_telegram_bot/handlers/create_wallet_handlers.py
 
-import mnemonic
 import traceback
 
+import mnemonic
 from aiogram import Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from asgiref.sync import sync_to_async
+########### django #########
+from django.contrib.auth import get_user_model
 # from sqlalchemy import select
 from solders.keypair import Keypair
 
+from applications.wallet.models import Wallet
 # from database.database import get_db
 from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
@@ -18,17 +22,13 @@ from logger_config import logger
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description, is_valid_wallet_seed_phrase
 
-########### django #########
-from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
-from asgiref.sync import sync_to_async
-
 
 @sync_to_async
 def get_user(telegram_id):
     User = get_user_model()
     user = User.objects.filter(telegram_id=telegram_id).first()
     return user
+
 
 @sync_to_async
 def create_wallet(user, name, description, wallet_address, solana_derivation_path):
@@ -43,6 +43,7 @@ def create_wallet(user, name, description, wallet_address, solana_derivation_pat
         user.last_solana_derivation_path = solana_derivation_path
         user.save()
     return wallet
+
 
 ############################
 
@@ -110,8 +111,9 @@ async def process_invalid_wallet_seed(message: Message, state: FSMContext) -> No
         logger.error(f"Error in process_invalid_wallet_seed: {e}\n{detailed_error_traceback}")
 
 
+
 @create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_name),
-                              lambda message: message.text and is_valid_wallet_name(message.text))
+                                        lambda message: message.text and is_valid_wallet_name(message.text))
 async def process_wallet_name(message: Message, state: FSMContext) -> None:
     """
         Handler for entering the wallet name.
@@ -170,7 +172,7 @@ async def process_invalid_wallet_name(message: Message, state: FSMContext) -> No
 
 
 @create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_description),
-                              lambda message: message.text and is_valid_wallet_description(message.text))
+                                        lambda message: message.text and is_valid_wallet_description(message.text))
 async def process_wallet_description(message: Message, state: FSMContext) -> None:
     """
         Handles the user input of the wallet description during creation.
