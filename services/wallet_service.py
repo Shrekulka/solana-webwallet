@@ -8,9 +8,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 # from sqlalchemy import select
 
-from config_data.config import LAMPORT_TO_SOL_RATIO
+from config_data.config import LAMPORT_TO_SOL_RATIO, CURRENT_BLOCKCHAIN
 # from database.database import get_db
 from external_services.solana.solana import get_sol_balance, http_client
+from external_services.binance_smart_chain.bsc import get_bnb_balance, bsc_client
 from keyboards.main_keyboard import main_keyboard
 from keyboards.transfer_transaction_keyboards import get_wallet_keyboard
 from lexicon.lexicon_en import LEXICON
@@ -19,7 +20,7 @@ from states.states import FSMWallet
 
 ########### django #########
 from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
+from applications.wallet.models import Wallet, Blockchain
 from asgiref.sync import sync_to_async
 
 User = get_user_model()
@@ -48,9 +49,15 @@ async def retrieve_user_wallets(callback: CallbackQuery) -> Tuple[Optional[User]
 
     user = await get_user(telegram_id=callback.from_user.id)
 
+    blockchain = CURRENT_BLOCKCHAIN
+    if blockchain == 'bsc':
+        blockchain_choices = Blockchain.BINANCE_SMART_CHAIN
+    elif blockchain == 'solana':
+        blockchain_choices = Blockchain.SOLANA
+
     if user:
 
-        async for w in Wallet.objects.filter(user=user):
+        async for w in Wallet.objects.filter(user=user, blockchain=blockchain_choices):
             user_wallets.append(w)
 
     # Возвращаем пользователя и его кошельки
@@ -102,7 +109,11 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
                 # Если пользователь запрашивает баланс, отправляем информацию о каждом кошельке
                 for i, wallet in enumerate(user_wallets):
                     # Получаем баланс кошелька
-                    balance = await get_sol_balance(wallet.wallet_address, http_client)
+                    blockchain = CURRENT_BLOCKCHAIN
+                    if blockchain == 'solana':
+                        balance = await get_sol_balance(wallet.wallet_address, http_client)
+                    elif blockchain == 'bsc':
+                        balance = await get_bnb_balance(wallet.wallet_address, bsc_client)
                     # Форматируем текст сообщения с информацией о кошельке
                     message_text = LEXICON['wallet_info_template'].format(
                         number=i + 1,
@@ -113,8 +124,7 @@ async def process_wallets_command(callback: CallbackQuery, state: FSMContext, ac
                     # Отправляем сообщение с информацией о кошельке
                     await callback.message.answer(message_text)
                 # Отправляем сообщение с кнопкой "вернуться в главное меню"
-                await callback.message.answer(text=LEXICON["back_to_main_menu"],
-                                              reply_markup=callback.message.reply_markup)
+                await callback.message.answer(text=LEXICON["back_to_main_menu"], reply_markup=callback.message.reply_markup)
             else:
                 # Если это не запрос баланса, то редактируем сообщение со списком кошельков
                 # и отображаем клавиатуру с выбором кошелька

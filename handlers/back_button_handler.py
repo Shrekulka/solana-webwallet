@@ -8,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery
 
+from config_data.config import CURRENT_BLOCKCHAIN
 from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from keyboards.transfer_transaction_keyboards import get_wallet_keyboard
@@ -106,7 +107,10 @@ async def process_back_button(callback: CallbackQuery, state: FSMContext) -> Non
         # Если текущее состояние - ввод суммы для трансфера
         elif current_state == FSMWallet.transfer_amount:
             await state.set_state(FSMWallet.transfer_recipient_address)
-            await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt"])
+            if CURRENT_BLOCKCHAIN == 'solana':
+                await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt"])
+            elif CURRENT_BLOCKCHAIN == 'bsc':
+                await callback.message.edit_text(LEXICON["transfer_recipient_address_prompt_bsc"])
             await callback.message.edit_reply_markup(reply_markup=back_keyboard)
 
         #############################################################################################################

@@ -5,8 +5,9 @@ from typing import List, Dict
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config_data.config import TRANSACTION_HISTORY_CACHE_DURATION
+from config_data.config import TRANSACTION_HISTORY_CACHE_DURATION, CURRENT_BLOCKCHAIN
 from external_services.solana.solana import get_sol_balance, http_client
+from external_services.binance_smart_chain.bsc import get_bnb_balance, bsc_client
 from lexicon.lexicon_en import LEXICON
 from applications.wallet.models import Wallet
 
@@ -38,7 +39,11 @@ async def get_wallet_keyboard(user_wallets: List[Wallet]) -> InlineKeyboardMarku
         # Формируем список адресов кошельков пользователя
         wallet_addresses = [wallet.wallet_address for wallet in user_wallets]
         # Получаем балансы кошельков асинхронно
-        balances = await get_sol_balance(wallet_addresses, http_client)
+        blockchain = CURRENT_BLOCKCHAIN
+        if blockchain == 'solana':
+            balances = await get_sol_balance(wallet_addresses, http_client)
+        if blockchain == 'bsc':
+            balances = await get_bnb_balance(wallet_addresses, bsc_client)
         # Создаем словарь с парами "адрес кошелька - баланс" и обновляем кэш балансов
         wallet_balances_cache = dict(zip(wallet_addresses, balances))
         # Обновляем время последнего обновления кэша
@@ -68,10 +73,7 @@ async def get_wallet_keyboard(user_wallets: List[Wallet]) -> InlineKeyboardMarku
 
         # Создаем кнопку для кошелька с текстом, содержащим информацию о кошельке, и callback_data,
         # содержащим адрес кошелька
-        wallet_button = InlineKeyboardButton(
-            text=wallet_button_text,
-            callback_data=f"wallet_address:{wallet.wallet_address}"
-        )
+        wallet_button = InlineKeyboardButton(text=wallet_button_text, callback_data=f"wallet_address:{wallet.wallet_address}")
 
         # Добавляем кнопку в список кнопок
         wallet_buttons.append([wallet_button])

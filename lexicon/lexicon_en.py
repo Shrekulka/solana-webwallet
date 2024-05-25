@@ -5,7 +5,7 @@
 START_MESSAGES = {
     "/start": "<b>👋 Hello, {first_name}!</b>\n\n"
               "<i>💳 Here you can buy, sell, store, and pay using your wallet.</i>\n\n"
-              "<i>🤖 The bot is currently using the Solana development network API:</i>\n"
+              "<i>🤖 The bot is currently using the Binance and Solana test network API:</i>\n"
               "<i>{node}</i>"
               "\n\n❓ To view the list of available commands, type /help 😊",
 }
@@ -13,18 +13,18 @@ START_MESSAGES = {
 # Справочное сообщение бота
 HELP_MESSAGES = {
     "/help": "<b>Description of the bot functionality:</b>\n\n"
-             "🔑 <b>Create wallet:</b>\n\n<i>Allows you to create a new Solana wallet."
+             "🔑 <b>Create wallet:</b>\n\n<i>Allows you to create a new Binance or Solana wallet."
              "After creating the wallet, you will receive a private key which you should securely store."
              "This private key is essential for any transactions or interactions with your wallet.</i>\n\n"
-             "🔗<b> Connect wallet:</b>\n\n<i>Allows you to connect an existing Solana wallet to your account."
+             "🔗<b> Connect wallet:</b>\n\n<i>Allows you to connect an existing Binance or Solana wallet to your account."
              "You will be prompted to enter the wallet address, name, and optional description.</i>\n\n"
              "💰<b> Show balance:</b>\n\n<i>Allows you to check the balance of all your connected wallets.</i>\n\n"
-             "📲<b> Transfer token:</b>\n\n<i>Transfers SOL between your Solana wallets. Select a sender, enter the "
+             "📲<b> Transfer token:</b>\n\n<i>Transfers BNB or SOL between your Binance or Solana wallets. Select a sender, enter the "
              "key, address, and amount. Once confirmed, the tokens will be transferred. Note that for a successful "
              "transfer, the sender must have a sufficient balance and be cautious when entering your private key.</i>"
              "\n\n"
              "<b>📜 View transaction history:</b>\n\n<i>Allows you to view the transaction history for one of your "
-             "registered Solana wallets. After selecting the desired wallet from the list, the bot will display the "
+             "registered Binance or Solana wallets. After selecting the desired wallet from the list, the bot will display the "
              "history of incoming and outgoing transactions for this wallet, including details of each transaction "
              "such as the unique transaction ID, sender and recipient addresses, and the transaction amount.</i>"
 }
@@ -99,12 +99,16 @@ TOKEN_TRANSFER_TRANSACTION_MESSAGE = {
     "transfer_recipient_address_prompt": "<b>📬 Enter the recipient's wallet address:</b>\n\n"
                                          "Note: The recipient's minimum balance\n"
                                          "should be at least 0.00089784 SOL",
+    "transfer_recipient_address_prompt_bsc": "<b>📬 Enter the recipient's wallet address:</b>\n\n",
     "transfer_amount_prompt": "<b>💸 Enter the amount of tokens to transfer:</b>",
     "invalid_wallet_address": "<b>❌ Invalid wallet address.</b>",
     "transfer_successful": "<b>✅ Transfer of {amount} SOL to\n\n<i>{recipient}</i>\n\nsuccessful.</b>",
+    "transfer_successful_bsc": "<b>✅ Transfer of {amount} BNB to\n\n<i>{recipient}</i>\n\nsuccessful.</b>",
     "transfer_not_successful": "<b>❌ Failed to transfer {amount} SOL to\n\n<i>{recipient}.</i></b>",
+    "transfer_not_successful_bsc": "<b>❌ Failed to transfer {amount} BNB to\n\n<i>{recipient}.</i></b>",
     "insufficient_balance": "<b>❌ Insufficient funds in your wallet for this transfer.</b>",
     "insufficient_balance_recipient": "<b>❌ The recipient's balance\nshould be at least 0.00089784 Sol.</b>",
+    "insufficient_balance_recipient_bsc": "<b>❌ The recipient's balance\nshould be at least 0.00089784 Sol.</b>",
     "no_wallet_connected": "<b>🔗 Please connect your wallet before transferring tokens.</b>",
     "list_sender_wallets": "<b>📋 Your wallet list:</b>\n\n<i>Click on the relevant wallet:</i>",
     "choose_sender_wallet": "<b>🔑 Enter your wallet address:</b>",

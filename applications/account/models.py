@@ -1,12 +1,6 @@
-import logging
-import json
-import datetime
-import random
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
-from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -29,7 +23,7 @@ class User(AbstractUser):
         default='en',
     )  # could be with dialects
 
-    is_bot =  models.CharField(
+    is_bot = models.CharField(
         max_length=20,
         verbose_name='Is Bot',
         blank=True,
@@ -49,6 +43,12 @@ class User(AbstractUser):
         blank=True,
     )
 
+    last_bsc_derivation_path = models.CharField(
+        verbose_name='Last Binance Smart Chain derivation path',
+        help_text='Will be used to create a new wallet',
+        max_length=50,
+        blank=True,
+    )
 
     class Meta:
         ordering = ['id']

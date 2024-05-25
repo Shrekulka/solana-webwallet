@@ -1,15 +1,31 @@
+# asyncio
+# aiogram
+# pydantic
+# colorama
+# lexicon
+# solana
+# solders
+# sqlalchemy
+# aiosqlite
+# asyncpg
+# python-dotenv
+# base58
+# django
+# django-model-utils
+# mnemonic
+
 asyncio
 aiogram
-pydantic
-colorama
-lexicon
-solana
-solders
-sqlalchemy
-aiosqlite
-asyncpg
-python-dotenv
 base58
+colorama
 django
 django-model-utils
+httpx
+lexicon
 mnemonic
+psycopg2-binary
+pydantic
+python-dotenv
+solana
+solders
+web3

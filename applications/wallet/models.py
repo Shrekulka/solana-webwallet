@@ -4,6 +4,58 @@ from django.contrib.auth import get_user_model
 from applications.core.models import Common
 
 
+class Blockchain(models.TextChoices):
+    SOLANA = 'solana', 'Solana'
+    BINANCE_SMART_CHAIN = 'bsc', 'Binance Smart Chain'
+    BINANCE_CHAIN = 'bnb', 'Binance Chain'
+    TON = 'ton', 'Telegram Open Network'
+
+
+class HDWallet(Common):
+    """
+    Hierarchical Deterministic wallets
+    """
+    user = models.ManyToManyField(
+        verbose_name='HD-Wallet owners',
+        to=get_user_model(),
+        related_name='hdwallets',
+    )
+
+    name = models.CharField(
+        verbose_name='HD-wallet name',
+        max_length=100,
+        blank=True,
+    )
+
+    first_address = models.CharField(
+        verbose_name='First wallet address',
+        help_text="Wallet address for initial derivation path, Ex.: \"m/44'/60'/0'/0/0\". Needed for identification HD-wallet",
+        max_length=200,
+        unique=True,
+    )
+
+    blockchain = models.CharField(
+        verbose_name='Blockchain',
+        choices=Blockchain.choices,
+        max_length=20,
+        blank=True,
+    )
+
+    last_derivation_path = models.CharField(
+        verbose_name='Last derivation path',
+        max_length=100,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ['created']
+        verbose_name = 'HD-wallet'
+        verbose_name_plural = 'HD-wallets'
+
+    def __str__(self):
+        return f'{self.blockchain}, {self.first_address[:4]}***{self.first_address[-4:]}'
+
+
 class Wallet(Common):
     """
     Wallet
@@ -13,6 +65,15 @@ class Wallet(Common):
         verbose_name='Wallet owners',
         to=get_user_model(),
         related_name='wallets',
+    )
+
+    hd_wallet = models.ForeignKey(
+        verbose_name='HD-Wallet',
+        to=HDWallet,
+        on_delete=models.CASCADE,
+        related_name='child_wallets',
+        blank=True,
+        null=True,
     )
 
     name = models.CharField(
@@ -33,8 +94,15 @@ class Wallet(Common):
         blank=True,
     )
 
-    solana_derivation_path = models.CharField(
-        verbose_name='Solana derivation path',
+    blockchain = models.CharField(
+        verbose_name='Blockchain',
+        choices=Blockchain.choices,
+        max_length=20,
+        blank=True,
+    )
+
+    derivation_path = models.CharField(
+        verbose_name='Derivation path',
         max_length=100,
         blank=True,
     )

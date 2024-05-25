@@ -199,3 +199,15 @@ dist/
 .venv/
 tmp/
 *.db
+
+# Docker: Let's Encrypt (Traefik)
+letsencrypt/
+
+# Django
+media/
+static/
+
+# logs/
+
+package-lock.json
+settings/whoosh*

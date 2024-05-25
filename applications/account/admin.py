@@ -29,4 +29,7 @@ class AdminUser(UserAdmin):
         ('Solana data', {
             'fields': ('last_solana_derivation_path',),
         }),
+        ('Binance data', {
+            'fields': ('last_bsc_derivation_path',),
+        }),
     )

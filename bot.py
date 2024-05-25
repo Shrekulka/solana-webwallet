@@ -70,7 +70,7 @@ async def main() -> None:
     dp.include_router(back_button_handler.back_button_router)
     dp.include_router(delete_wallet_handlers.delete_wallet_router)
     # Проверяем наличие базы данных и инициализируем ее при необходимости
-    await init_database()
+    # await init_database()
 
     # Пропускаем накопившиеся апдейты и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)

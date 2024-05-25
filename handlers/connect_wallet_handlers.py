@@ -1,15 +1,19 @@
-# solana_wallet_telegram_bot/handlers/connect_wallet_handlers.py
 import traceback
 
 from aiogram import Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from sqlalchemy import select
+from web3 import AsyncWeb3
+# from sqlalchemy import select
 
-from database.database import get_db
+# from database.database import get_db
+from config_data.config import CURRENT_BLOCKCHAIN
 from external_services.solana.solana import (
     is_valid_wallet_address,
+)
+from external_services.binance_smart_chain.bsc import (
+    is_valid_bsc_wallet_address,
 )
 from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
@@ -20,7 +24,7 @@ from utils.validators import is_valid_wallet_name, is_valid_wallet_description
 
 ########### django #########
 from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
+from applications.wallet.models import Wallet, Blockchain
 from asgiref.sync import sync_to_async
 
 
@@ -31,11 +35,23 @@ def get_user(telegram_id):
     return user
 
 @sync_to_async
-def create_wallet(user, wallet_address, name, description):
+def create_wallet(user, wallet_address, name, description, blockchain):
+    print("**** blockchain:", blockchain)
+    if blockchain == 'bsc':
+        w3 = AsyncWeb3()
+        # Checksum адрес отличается от не checksum тем, что некоторые буквы в адресе будут в верхнем регистре.
+        # Checksum address нужен для того, чтобы убедиться, что адрес валиден и не содержит опечаток.
+        wallet_address = w3.to_checksum_address(wallet_address)
+        blockchain_choices = Blockchain.BINANCE_SMART_CHAIN
+
+    elif blockchain == 'solana':
+        blockchain_choices = Blockchain.SOLANA
+
     wallet = Wallet.objects.create(
         wallet_address=wallet_address,
         name=name,
         description=description,
+        blockchain=blockchain_choices,
     )
     wallet.user.set([user])
     return wallet
@@ -61,28 +77,55 @@ async def process_connect_wallet_address(message: Message, state: FSMContext) ->
     try:
         # Извлекаем адрес кошелька из текста сообщения
         wallet_address = message.text
-        # Проверяем валидность адреса кошелька
-        if is_valid_wallet_address(wallet_address):
-            # Обновляем данные состояния с адресом кошелька
-            user = await get_user(telegram_id=message.from_user.id)
-            user_wallets = []
+        blockchain = CURRENT_BLOCKCHAIN
 
-            async for w in Wallet.objects.filter(user=user):
-                user_wallets.append(w.wallet_address)
+        if blockchain == 'solana':
+            # Проверяем валидность адреса кошелька
+            if is_valid_wallet_address(wallet_address):
+                # Обновляем данные состояния с адресом кошелька
+                user = await get_user(telegram_id=message.from_user.id)
+                user_wallets = []
 
-            if wallet_address in user_wallets:
-                await message.answer(LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
-                await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
+                async for w in Wallet.objects.filter(user=user):
+                    user_wallets.append(w.wallet_address)
+
+                if wallet_address in user_wallets:
+                    await message.answer(LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
+                    await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
+                else:
+                    await state.update_data(wallet_address=wallet_address, blockchain=blockchain)
+                    # Отправляем запрос на ввод имени
+                    await message.answer(LEXICON["connect_wallet_add_name"], reply_markup=back_keyboard)
+                    await state.set_state(FSMWallet.connect_wallet_add_name)
+
             else:
-                await state.update_data(wallet_address=wallet_address)
-                # Отправляем запрос на ввод имени
-                await message.answer(LEXICON["connect_wallet_add_name"], reply_markup=back_keyboard)
-                await state.set_state(FSMWallet.connect_wallet_add_name)
+                # Если адрес невалиден, отправляем сообщение об ошибке и просим ввести адрес заново
+                await message.answer(LEXICON["invalid_wallet_address"])
+                await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
 
-        else:
-            # Если адрес невалиден, отправляем сообщение об ошибке и просим ввести адрес заново
-            await message.answer(LEXICON["invalid_wallet_address"])
-            await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
+        if blockchain == 'bsc':
+            # Проверяем валидность адреса кошелька
+            if is_valid_bsc_wallet_address(wallet_address):
+                # Обновляем данные состояния с адресом кошелька
+                user = await get_user(telegram_id=message.from_user.id)
+                user_wallets = []
+
+                async for w in Wallet.objects.filter(user=user):
+                    user_wallets.append(w.wallet_address)
+
+                if wallet_address in user_wallets:
+                    await message.answer(LEXICON["this_wallet_already_exists"].format(wallet_address=wallet_address))
+                    await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
+                else:
+                    await state.update_data(wallet_address=wallet_address, blockchain=blockchain)
+                    # Отправляем запрос на ввод имени
+                    await message.answer(LEXICON["connect_wallet_add_name"], reply_markup=back_keyboard)
+                    await state.set_state(FSMWallet.connect_wallet_add_name)
+
+            else:
+                # Если адрес невалиден, отправляем сообщение об ошибке и просим ввести адрес заново
+                await message.answer(LEXICON["invalid_wallet_address"])
+                await message.answer(LEXICON["connect_wallet_address"], reply_markup=back_keyboard)
     except Exception as e:
         # Обработка ошибок и запись подробной информации в лог
         detailed_error_traceback = traceback.format_exc()
@@ -172,9 +215,18 @@ async def process_connect_wallet_description(message: Message, state: FSMContext
         description = data.get("description")
         # Извлекаем адрес кошелька из данных (если он есть)
         wallet_address = data.get("wallet_address")
+        # Извлекаем блокчейн из данных
+        blockchain = data.get("blockchain")
 
         user = await get_user(telegram_id=message.from_user.id)
-        wallet = await create_wallet(user=user, wallet_address=wallet_address, name=name, description=description)
+
+        wallet = await create_wallet(
+            user=user,
+            wallet_address=wallet_address,
+            name=name,
+            description=description,
+            blockchain=blockchain,
+        )
 
         if wallet:
             # Отправляем сообщение об успешном подключении

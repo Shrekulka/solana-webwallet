@@ -64,3 +64,4 @@ typing_extensions==4.10.0
 urllib3==2.2.1
 websockets==11.0.3
 yarl==1.9.4
+psycopg2-binary

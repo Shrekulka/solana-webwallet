@@ -6,9 +6,18 @@ from applications.core.admin import CommonAdmin
 from . import models
 
 
+@admin.register(models.HDWallet)
+class HDWalletAdmin(CommonAdmin):
+    list_display = ['first_address', 'name', 'status', 'created']
+    list_filter = ['status']
+    search_fields = ['user', 'name', 'description']
+    date_hierarchy = 'created'
+    ordering = ['-created']
+
+
 @admin.register(models.Wallet)
 class WalletAdmin(CommonAdmin):
-    list_display = ['wallet_address', 'name', 'status', 'created']
+    list_display = ['wallet_address', 'blockchain', 'name', 'status', 'created']
     list_filter = ['status']
     search_fields = ['user', 'name', 'description']
     date_hierarchy = 'created'
@@ -44,12 +53,6 @@ class TransactionAdmin(CommonAdmin):
     get_wallet.short_description = 'wallets: sender | recipient'
 
     def get_amount(self, obj):
-        reverse = ''
-        amount = str(obj.pre_balances - obj.post_balances)
-        for i, c in enumerate(amount[::-1]):
-            if (i % 3) == 0:
-                reverse += '_'
-            reverse += c
-        format_amount = reverse[::-1]
-        return format_amount.strip('_')
+        amount = obj.pre_balances - obj.post_balances
+        return f'{amount:_}'
     get_amount.short_description = 'Amount'

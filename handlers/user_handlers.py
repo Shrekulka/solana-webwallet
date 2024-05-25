@@ -15,7 +15,7 @@ from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
-from config_data.config import SOLANA_NODE_URL
+from config_data.config import SOLANA_NODE_URL, BINANCE_NODE_URL, CURRENT_BLOCKCHAIN
 
 ########### django #########
 from django.contrib.auth import get_user_model
@@ -47,11 +47,19 @@ async def process_start_command(message: Message, state: FSMContext) -> None:
             None
     """
     try:
+        blockchain = CURRENT_BLOCKCHAIN
+
+        if blockchain == 'bsc':
+            node_url=BINANCE_NODE_URL
+
+        elif blockchain == 'solana':
+            node_url=SOLANA_NODE_URL
+
         # Отправка сообщения пользователю с приветственным текстом и клавиатурой
         await message.answer(
             LEXICON["/start"].format(
                 first_name=message.from_user.first_name,
-                node=SOLANA_NODE_URL,
+                node=node_url,
             ),
             reply_markup=main_keyboard,
         )

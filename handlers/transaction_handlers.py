@@ -17,7 +17,7 @@ from lexicon.lexicon_en import LEXICON
 from logger_config import logger
 from services.wallet_service import format_transaction_message, format_transaction_from_db_message
 from states.states import FSMWallet
-from config_data.config import SOLANA_NODE_URL, LAMPORT_TO_SOL_RATIO
+from config_data.config import SOLANA_NODE_URL, LAMPORT_TO_SOL_RATIO, CURRENT_BLOCKCHAIN
 
 ########### django #########
 from applications.wallet.models import Wallet, Transaction
@@ -124,21 +124,25 @@ async def process_choose_transaction_wallet(callback: CallbackQuery, state: FSMC
         while transaction_max_limit > 0:
             transaction_max_limit -= transaction_limit
 
-            # api.devnet.solana.com выдает ошибку при попытке получить историю трансакций
-            if "api.devnet.solana.com" not in SOLANA_NODE_URL:
-                # Получаем историю транзакций кошелька по его адресу.
-                transaction_history += await get_transaction_history(wallet_address, transaction_id_before, transaction_limit)
+            if CURRENT_BLOCKCHAIN == 'bsc':
+                pass
 
-            if transaction_history:
+            if CURRENT_BLOCKCHAIN == 'solana':
+                # api.devnet.solana.com выдает ошибку при попытке получить историю трансакций
+                if "api.devnet.solana.com" not in SOLANA_NODE_URL:
+                    # Получаем историю транзакций кошелька по его адресу.
+                    transaction_history += await get_transaction_history(wallet_address, transaction_id_before, transaction_limit)
 
-                if transaction_history[-1].block_time in tr_from_db_time_list:
-                    el_index = tr_from_db_time_list.index(transaction_history[-1].block_time)
-                    if (el_index + 1) < len(tr_history_from_db):
-                        tr_from_db_tasks = [format_transaction_from_db_message(tr) for tr in tr_history_from_db[el_index + 1:]]
-                    break
+                if transaction_history:
 
-                else:
-                    transaction_id_before = transaction_history[-1].transaction.transaction.signatures[0]
+                    if transaction_history[-1].block_time in tr_from_db_time_list:
+                        el_index = tr_from_db_time_list.index(transaction_history[-1].block_time)
+                        if (el_index + 1) < len(tr_history_from_db):
+                            tr_from_db_tasks = [format_transaction_from_db_message(tr) for tr in tr_history_from_db[el_index + 1:]]
+                        break
+
+                    else:
+                        transaction_id_before = transaction_history[-1].transaction.transaction.signatures[0]
 
         if transaction_history:
             for tr in transaction_history:

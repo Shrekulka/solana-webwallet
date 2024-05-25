@@ -9,8 +9,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 # from sqlalchemy import select
 from solders.keypair import Keypair
+from web3 import Web3, AsyncWeb3
+from eth_account import Account
 
 # from database.database import get_db
+from config_data.config import CURRENT_BLOCKCHAIN
 from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
@@ -20,7 +23,7 @@ from utils.validators import is_valid_wallet_name, is_valid_wallet_description, 
 
 ########### django #########
 from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
+from applications.wallet.models import Wallet, Blockchain
 from asgiref.sync import sync_to_async
 
 
@@ -30,18 +33,31 @@ def get_user(telegram_id):
     user = User.objects.filter(telegram_id=telegram_id).first()
     return user
 
+
 @sync_to_async
-def create_wallet(user, name, description, wallet_address, solana_derivation_path):
+def create_wallet(user, name, description, wallet_address, derivation_path, blockchain):
+    print("****** blockchain:", blockchain)
+    if blockchain == 'bsc':
+        blockchain_choices = Blockchain.BINANCE_SMART_CHAIN
+        user.last_bsc_derivation_path = derivation_path
+        user.save()
+
+    elif blockchain == 'solana':
+        blockchain_choices = Blockchain.SOLANA
+        user.last_solana_derivation_path = derivation_path
+        user.save()
+
     wallet = Wallet.objects.create(
         wallet_address=wallet_address,
         name=name,
         description=description,
-        solana_derivation_path=solana_derivation_path,
+        blockchain=blockchain_choices,
+        derivation_path=derivation_path,
     )
+
     if wallet:
         wallet.user.set([user])
-        user.last_solana_derivation_path = solana_derivation_path
-        user.save()
+
     return wallet
 
 ############################
@@ -188,6 +204,8 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         seed_phrase = data.get("seed_phrase")
         name = data.get("wallet_name")
         description = data.get("description")
+        index = 0
+        blockchain = CURRENT_BLOCKCHAIN
 
         user = await get_user(telegram_id=message.from_user.id)
 
@@ -196,37 +214,65 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
         async for w in Wallet.objects.filter(user=user):
             user_wallets.append(w.wallet_address)
 
-        # last_number_solana_derivation_path = 0
+        if blockchain == 'solana':
+            if user.last_solana_derivation_path:
+                derivation_path = user.last_solana_derivation_path
+                list_from_derivation_path = derivation_path.split('/')
+                last_el = list_from_derivation_path[-1]
+                index = int(last_el[0]) + 1
 
-        # # если int значит уже была запись в user.last_number_solana_derivation_path
-        # if isinstance(user.last_number_solana_derivation_path, int):
-        #     last_number_solana_derivation_path = user.last_number_solana_derivation_path + 1
-        if user.last_solana_derivation_path:
-            derivation_path = user.last_solana_derivation_path
-            derivation_path_list = derivation_path.split('/')
-            last_el = derivation_path_list[-1]
-            index = int(last_el[0]) + 1
+            while True:
+                derivation_path = f"m/44'/501'/0'/{index}'"
 
-        while True:
-            solana_derivation_path = f"m/44'/501'/0'/{index}'"
+                mnemo = mnemonic.Mnemonic("english")
+                seed = mnemo.to_seed(seed_phrase, passphrase="")
+                keypair = Keypair.from_seed_and_derivation_path(seed, derivation_path)
+                wallet_address = str(keypair.pubkey())
+                private_key = keypair.secret().hex()
 
-            mnemo = mnemonic.Mnemonic("english")
-            seed = mnemo.to_seed(seed_phrase, passphrase="")
-            keypair = Keypair.from_seed_and_derivation_path(seed, solana_derivation_path)
-            wallet_address = str(keypair.pubkey())
-            private_key = keypair.secret().hex()
+                if wallet_address not in user_wallets:
+                    break
+                else:
+                    index += 1
 
-            if wallet_address not in user_wallets:
-                break
-            else:
-                index += 1
+        if blockchain == 'bsc':
+            if user.last_bsc_derivation_path:
+                derivation_path = user.last_bsc_derivation_path
+                list_from_derivation_path = derivation_path.split('/')
+                last_el = list_from_derivation_path[-1]
+                index = int(last_el[0]) + 1
+
+            w3 = AsyncWeb3()
+            # The use of the Mnemonic features of Account is disabled by default until its API stabilizes.
+            # To use these features, please enable them by running `Account.enable_unaudited_hdwallet_features()` and try again.
+            Account.enable_unaudited_hdwallet_features()
+            #TODO: BNB 24-word mnemonic and derivation path: https://docs.bnbchain.org/docs/learn/genesis/
+            # we use 12-word
+
+            while True:
+                derivation_path = f"m/44'/60'/0'/0/{index}"
+
+                acct = Account.from_mnemonic(
+                    mnemonic=seed_phrase,
+                    passphrase='',
+                    account_path=derivation_path,
+                )
+
+                wallet_address = acct.address
+                private_key = w3.to_hex(acct.key)
+
+                if wallet_address not in user_wallets:
+                    break
+                else:
+                    index += 1
 
         wallet = await create_wallet(
             user=user,
             name=name,
             description=description,
             wallet_address=wallet_address,
-            solana_derivation_path=solana_derivation_path,
+            derivation_path=derivation_path,
+            blockchain=blockchain,
         )
 
         if wallet:

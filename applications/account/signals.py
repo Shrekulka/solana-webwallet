@@ -13,3 +13,12 @@ def delete_wallet(sender, instance, **kwargs):
     for wallet in wallets:
         if wallet.user.count() <= 1:
             wallet.delete()
+
+
+# delete related hd-wallets
+@receiver(pre_delete, sender=User)
+def delete_hd_wallet(sender, instance, **kwargs):
+    hd_wallets = instance.hdwallets.all()
+    for hd_wallet in hd_wallets:
+        if hd_wallet.user.count() <= 1:
+            hd_wallet.delete()
