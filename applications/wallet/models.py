@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 from applications.core.models import Common
 
@@ -118,4 +118,5 @@ class Transaction(Common):
         verbose_name_plural = 'transactions'
 
     def __str__(self):
-        return f'id: {self.transaction_id[:4]}...{self.transaction_id[-4:]}, time: {self.transaction_time}, slot: {self.slot}'
+        return (f'id: {self.transaction_id[:4]}...{self.transaction_id[-4:]}, time: {self.transaction_time}, '
+                f'slot: {self.slot}')

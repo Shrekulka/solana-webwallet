@@ -7,32 +7,25 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery
-from asgiref.sync import sync_to_async
-########### django #########
-from django.contrib.auth import get_user_model
 
 from config_data.config import SOLANA_NODE_URL
-# from database.database import get_db
+from keyboards.connect_wallet import connect_wallet_keyboard
+from keyboards.create_wallet import create_wallet_keyboard
 from keyboards.main_keyboard import main_keyboard
 from keyboards.return_main_keyboard import return_main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
+from services.user_service import update_or_create_user
 from services.wallet_service import process_wallets_command
 from states.states import FSMWallet
 
-
-# from sqlalchemy import select
-
-
 # Django
 ########################################################################################################################
-@sync_to_async
-def update_or_create_user(telegram_id, defaults):
-    User = get_user_model()
-    user, created = User.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
-    return user, created
-
-
+# @sync_to_async
+# def update_or_create_user(telegram_id, defaults):
+#     User = get_user_model()
+#     user, created = User.objects.update_or_create(telegram_id=telegram_id, defaults=defaults)
+#     return user, created
 ########################################################################################################################
 
 # Telegram
@@ -54,6 +47,8 @@ async def process_start_command(message: Message, state: FSMContext) -> None:
             None
     """
     try:
+        # # Устанавливаем состояние по умолчанию
+        # await state.set_state(FSMWallet.default_state)
         # Отправка сообщения пользователю с приветственным текстом и клавиатурой
         await message.answer(
             LEXICON["/start"].format(
@@ -128,53 +123,15 @@ async def process_unexpected_input(message: Message) -> None:
 
 
 ########################################################################################################################
-
 @user_router.callback_query(F.data == "callback_button_create_wallet", StateFilter(default_state))
 async def process_create_wallet_command(callback: CallbackQuery, state: FSMContext) -> None:
-    """
-        Handler for selecting the "Create Wallet" option from the menu.
-
-        Args:
-            callback (CallbackQuery): The callback object.
-            state (FSMContext): The state of the finite state machine.
-
-        Returns:
-            None
-    """
     try:
-        # Отправляем сообщение с просьбой ввести имя для кошелька
-        await callback.message.edit_text(LEXICON["create_name_wallet"], reply_markup=return_main_keyboard)
-        # Переход в состояние добавления имени кошелька
-        await state.set_state(FSMWallet.create_wallet_add_name)
-        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.message.edit_text(LEXICON["choose_wallet_creation_method"], reply_markup=create_wallet_keyboard)
+        await state.set_state(FSMWallet.create_wallet_method_chosen)
         await callback.answer()
     except Exception as error:
         detailed_send_message_error = traceback.format_exc()
         logger.error(f"Error in process_create_wallet_command: {error}\n{detailed_send_message_error}")
-
-
-########################################################################################################################
-
-@user_router.callback_query(F.data == "callback_button_create_wallet_from_seed", StateFilter(default_state))
-async def process_create_wallet_from_seed_command(callback: CallbackQuery, state: FSMContext) -> None:
-    """
-        Handler for selecting the "Create Wallet From Seed" option from the menu.
-
-        Args:
-            callback (CallbackQuery): The callback object.
-            state (FSMContext): The state of the finite state machine.
-
-        Returns:
-            None
-    """
-    try:
-        await callback.message.edit_text(LEXICON["create_seed_wallet"])
-        await state.set_state(FSMWallet.create_wallet_from_seed_add_seed)
-        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
-        await callback.answer()
-    except Exception as error:
-        detailed_send_message_error = traceback.format_exc()
-        logger.error(f"Error in process_create_wallet_from_seed_command: {error}\n{detailed_send_message_error}")
 
 
 ########################################################################################################################
@@ -192,11 +149,9 @@ async def process_connect_wallet_command(callback: CallbackQuery, state: FSMCont
             None
     """
     try:
-        # Запрашиваем у пользователя адрес кошелька
-        await callback.message.edit_text(LEXICON["connect_wallet_address"])
-        # Переход в состояние добавления
-        await state.set_state(FSMWallet.connect_wallet_add_address)
-        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.message.edit_text(LEXICON["choose_wallet_connection_method"],
+                                         reply_markup=connect_wallet_keyboard)
+        await state.set_state(FSMWallet.connect_wallet_method_chosen)
         await callback.answer()
     except Exception as error:
         detailed_send_message_error = traceback.format_exc()
@@ -286,7 +241,6 @@ async def process_crypto_price_command(callback: CallbackQuery, state: FSMContex
         None
     """
     try:
-        logger.info("You are in def process_crypto_price_command!!!")
         # Редактируем сообщение, чтобы запросить символ криптовалюты
         await callback.message.edit_text(LEXICON["crypto_price_prompt"], reply_markup=return_main_keyboard)
         # Устанавливаем состояние FSM для обработки ввода символа криптовалюты

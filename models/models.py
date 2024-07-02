@@ -3,7 +3,7 @@
 import traceback
 from typing import Optional, Tuple
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, select
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, select, LargeBinary
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import relationship, Session, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -273,3 +273,25 @@ class SolanaTokenBalance(Base):
     # Отношение между таблицей балансов токенов и таблицей кошельков:
     # каждый баланс токена привязан к одному кошельку
     wallet = relationship('SolanaWallet', back_populates='token_balances')
+
+class QRCode(Base):
+    """
+    Represents a QR code entity.
+
+    Attributes:
+        id (int): The unique identifier for the QR code.
+        wallet_id (int): The identifier of the wallet associated with the QR code.
+        qr_data (str): The data encoded in the QR code.
+        qr_image (bytes): The binary data of the QR code image.
+        created_at (DateTime): The datetime when the QR code was created.
+        wallet (relationship): Relationship to the wallet associated with the QR code.
+    """
+    __tablename__ = 'qr_codes'
+
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(Integer, ForeignKey('solana_wallets.id'), nullable=False)
+    qr_data = Column(String, nullable=False)
+    qr_image = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    wallet = relationship('SolanaWallet', back_populates='qr_codes')

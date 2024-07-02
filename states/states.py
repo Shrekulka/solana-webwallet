@@ -21,27 +21,43 @@ class FSMWallet(StatesGroup):
             choose_transaction_wallet (State): State for choosing the wallet to view transactions.
             crypto_price_input (State)
     """
+    ####################################################################################################################
+    default_state = State()  # состояние по умолчанию
+    ####################################################################################################################
+    create_wallet_method_chosen = State()
 
-    create_wallet_add_name = State()  # Состояние добавления имени нового кошелька
-    create_wallet_add_description = State()  # Состояние добавления описания нового кошелька
+    create_wallet_constructor_command_add_name = State()  # Состояние добавления имени нового кошелька
+    create_wallet_constructor_command_add_description = State()  # Состояние добавления описания нового кошелька
     create_wallet_from_seed_add_seed = State()
     create_wallet_from_seed_add_name = State()
-    create_wallet_from_seed_add_description=State()
+    create_wallet_from_seed_add_description = State()
+    ####################################################################################################################
+    delete_wallet = State()
+    ####################################################################################################################
+    connect_wallet_method_chosen = State()
 
-    connect_wallet_add_address = State()  # Состояние добавления адреса для подключения существующего кошелька
-    connect_wallet_add_name = State()  # Состояние добавления имени существующего кошелька
-    connect_wallet_add_description = State()  # Состояние добавления описания существующего кошелька
+    # Состояние добавления адреса для подключения существующего кошелька
+    connect_wallet_constructor_command_add_address = State()
+    # Состояние добавления имени существующего кошелька
+    connect_wallet_constructor_command_add_name = State()
+    # Состояние добавления описания существующего кошелька
+    connect_wallet_constructor_command_add_description = State()
 
+    connect_wallet_from_seed_add_seed = State()
+    connect_wallet_from_seed_add_name = State()
+    connect_wallet_from_seed_add_description = State()
+
+    connect_wallet_qr_add_code = State()
+    connect_wallet_qr_add_name = State()
+    connect_wallet_qr_add_description = State()
+    ####################################################################################################################
     transfer_choose_sender_wallet = State()  # Состояние выбора кошелька отправителя при переводе токенов
     transfer_sender_private_key = State()  # Состояние ввода приватного ключа отправителя
 
     confirm_save_new_wallet = State()  # Состояние подтверждения сохранения нового кошелька
     transfer_recipient_address = State()  # Состояние ввода адреса кошелька получателя при переводе токенов
     transfer_amount = State()  # Состояние ввода количества токенов для передачи
+    ####################################################################################################################
     choose_transaction_wallet = State()  # Состояние выбора кошелька для просмотра транзакций
-
-    delete_wallet = State()
-
+    ####################################################################################################################
     crypto_price_input = State()  # Состояние для ввода символа криптовалюты
-
-

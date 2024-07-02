@@ -3,53 +3,78 @@
 import traceback
 
 import mnemonic
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
-from asgiref.sync import sync_to_async
-########### django #########
-from django.contrib.auth import get_user_model
-# from sqlalchemy import select
+from aiogram.types import Message, CallbackQuery
 from solders.keypair import Keypair
 
 from applications.wallet.models import Wallet
-# from database.database import get_db
 from keyboards.back_keyboard import back_keyboard
-from keyboards.main_keyboard import main_keyboard
+from keyboards.return_main_keyboard import return_main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
+from services.wallet_service import create_wallet, get_user
 from states.states import FSMWallet
+from utils.qr_utils import get_photo_qr_code
 from utils.validators import is_valid_wallet_name, is_valid_wallet_description, is_valid_wallet_seed_phrase
 
+# Django
+########################################################################################################################
+# @sync_to_async
+# def get_user(telegram_id):
+#     User = get_user_model()
+#     user = User.objects.filter(telegram_id=telegram_id).first()
+#     return user
+#
+#
+# @sync_to_async
+# def create_wallet(user, name, description, wallet_address, solana_derivation_path):
+#     wallet = Wallet.objects.create(
+#         wallet_address=wallet_address,
+#         name=name,
+#         description=description,
+#         solana_derivation_path=solana_derivation_path,
+#     )
+#     if wallet:
+#         wallet.user.set([user])
+#         user.last_solana_derivation_path = solana_derivation_path
+#         user.save()
+#     return wallet
+########################################################################################################################
 
-@sync_to_async
-def get_user(telegram_id):
-    User = get_user_model()
-    user = User.objects.filter(telegram_id=telegram_id).first()
-    return user
-
-
-@sync_to_async
-def create_wallet(user, name, description, wallet_address, solana_derivation_path):
-    wallet = Wallet.objects.create(
-        wallet_address=wallet_address,
-        name=name,
-        description=description,
-        solana_derivation_path=solana_derivation_path,
-    )
-    if wallet:
-        wallet.user.set([user])
-        user.last_solana_derivation_path = solana_derivation_path
-        user.save()
-    return wallet
-
-
-############################
-
+# Telegram
+########################################################################################################################
 # Инициализируем роутер уровня модуля
 create_wallet_from_seed_router: Router = Router()
 
+
+########################################################################################################################
+@create_wallet_from_seed_router.callback_query(F.data == "callback_button_create_wallet_from_seed",
+                                               StateFilter(FSMWallet.create_wallet_method_chosen))
+async def process_create_wallet_from_seed_command(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+        Handler for selecting the "Create Wallet From Seed" option from the menu.
+
+        Args:
+            callback (CallbackQuery): The callback object.
+            state (FSMContext): The state of the finite state machine.
+
+        Returns:
+            None
+    """
+    try:
+        # Отправляем сообщение с просьбой ввести seed фразу для кошелька
+        await callback.message.edit_text(LEXICON["create_seed_wallet"], reply_markup=back_keyboard)
+        await state.set_state(FSMWallet.create_wallet_from_seed_add_seed)
+        # Избегаем ощущения, что бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку
+        await callback.answer()
+    except Exception as error:
+        detailed_send_message_error = traceback.format_exc()
+        logger.error(f"Error in process_create_wallet_from_seed_command: {error}\n{detailed_send_message_error}")
+
+
+########################################################################################################################
 
 @create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_seed),
                                         lambda message: message.text and is_valid_wallet_seed_phrase(message.text))
@@ -111,6 +136,7 @@ async def process_invalid_wallet_seed(message: Message, state: FSMContext) -> No
         logger.error(f"Error in process_invalid_wallet_seed: {e}\n{detailed_error_traceback}")
 
 
+########################################################################################################################
 
 @create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_name),
                                         lambda message: message.text and is_valid_wallet_name(message.text))
@@ -170,6 +196,8 @@ async def process_invalid_wallet_name(message: Message, state: FSMContext) -> No
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_invalid_wallet_name: {e}\n{detailed_error_traceback}")
 
+
+########################################################################################################################
 
 @create_wallet_from_seed_router.message(StateFilter(FSMWallet.create_wallet_from_seed_add_description),
                                         lambda message: message.text and is_valid_wallet_description(message.text))
@@ -241,10 +269,10 @@ async def process_wallet_description(message: Message, state: FSMContext) -> Non
                                                           wallet_address=wallet.wallet_address,
                                                           private_key=private_key,
                                                           seed_phrase=seed_phrase))
-        # Очищаем состояние после добавления кошелька
-        await state.clear()
-        # Отправляем сообщение с предложением продолжить и клавиатурой основного меню
-        await message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
+        # Создаем QR-код и получаем его картинку
+        photo = await get_photo_qr_code(wallet)
+        # Отправляем сообщение с изображением QR-кода
+        await message.answer_photo(photo=photo, caption=LEXICON["qr_code_caption"], reply_markup=return_main_keyboard)
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_wallet_description: {e}\n{detailed_error_traceback}")
@@ -270,3 +298,4 @@ async def process_invalid_wallet_description(message: Message, state: FSMContext
     except Exception as e:
         detailed_error_traceback = traceback.format_exc()
         logger.error(f"Error in process_invalid_wallet_description: {e}\n{detailed_error_traceback}")
+########################################################################################################################

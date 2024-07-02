@@ -28,28 +28,28 @@ from keyboards.back_keyboard import back_keyboard
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
+from services.wallet_service import get_wallet, update_wallet
 from states.states import FSMWallet
 from utils.validators import is_valid_wallet_seed_phrase
 
-########### django #########
-from applications.wallet.models import Wallet
-from asgiref.sync import sync_to_async
+# Django
+########################################################################################################################
+# @sync_to_async
+# def get_wallet(wallet_address):
+#     wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
+#     return wallet
+#
+#
+# @sync_to_async
+# def update_wallet(wallet_address, solana_derivation_path):
+#     wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
+#     wallet.solana_derivation_path = solana_derivation_path
+#     wallet.save()
+#     return wallet
+########################################################################################################################
 
-
-@sync_to_async
-def get_wallet(wallet_address):
-    wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
-    return wallet
-
-
-@sync_to_async
-def update_wallet(wallet_address, solana_derivation_path):
-    wallet = Wallet.objects.filter(wallet_address=wallet_address).first()
-    wallet.solana_derivation_path = solana_derivation_path
-    wallet.save()
-    return wallet
-
-############################
+# Telegram
+########################################################################################################################
 
 # Инициализируем роутер уровня модуля
 transfer_router: Router = Router()

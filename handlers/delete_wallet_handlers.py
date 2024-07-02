@@ -5,42 +5,39 @@ import traceback
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
 from aiogram.types import CallbackQuery
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from keyboards.main_keyboard import main_keyboard
 from lexicon.lexicon_en import LEXICON
 from logger_config import logger
+from services.wallet_service import get_user, delete_wallet
 from states.states import FSMWallet
 
-########### django #########
-from django.contrib.auth import get_user_model
-from applications.wallet.models import Wallet
-from asgiref.sync import sync_to_async
+# Django
+########################################################################################################################
+# @sync_to_async
+# def get_user(telegram_id):
+#     User = get_user_model()
+#     user = User.objects.filter(telegram_id=telegram_id).first()
+#     return user
+#
+#
+# @sync_to_async
+# def delete_wallet(user, wallet_address):
+#     wallet = Wallet.objects.filter(user=user, wallet_address=wallet_address).first()
+#     number_objects_deleted = wallet.delete()
+#     return number_objects_deleted
+########################################################################################################################
 
-
-@sync_to_async
-def get_user(telegram_id):
-    User = get_user_model()
-    user = User.objects.filter(telegram_id=telegram_id).first()
-    return user
-
-
-@sync_to_async
-def delete_wallet(user, wallet_address):
-    wallet = Wallet.objects.filter(user=user, wallet_address=wallet_address).first()
-    number_objects_deleted = wallet.delete()
-    return number_objects_deleted
-
-############################
-
+# Telegram
+########################################################################################################################
 # Инициализируем роутер уровня модуля
 delete_wallet_router: Router = Router()
 
 
 @delete_wallet_router.callback_query(F.data.startswith("wallet_address:"),
-                                   StateFilter(FSMWallet.delete_wallet))
+                                     StateFilter(FSMWallet.delete_wallet))
 async def process_confirmation_delete_wallet(callback: CallbackQuery, state: FSMContext) -> None:
     """
         Handles the button press to confirmation a wallet deleting.
@@ -57,7 +54,8 @@ async def process_confirmation_delete_wallet(callback: CallbackQuery, state: FSM
 
         delete_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=LEXICON["button_delete_confirmation"], callback_data=f"del_wallet:{wallet_address}")],
+                [InlineKeyboardButton(text=LEXICON["button_delete_confirmation"],
+                                      callback_data=f"del_wallet:{wallet_address}")],
                 [InlineKeyboardButton(text=LEXICON["button_back"], callback_data="callback_button_back")],
             ]
         )

@@ -21,17 +21,25 @@ async def process_return_main_menu(callback: CallbackQuery, state: FSMContext) -
     logger.info("You are in def process_return_main_menu!!!")
     try:
         current_state = await state.get_state()
-        logger.info(f"State set to: {current_state}")
+
         if current_state in [
-            FSMWallet.create_wallet_add_name,
-            FSMWallet.connect_wallet_add_address,
+            FSMWallet.default_state,
+            FSMWallet.create_wallet_method_chosen,
+            FSMWallet.connect_wallet_method_chosen,
+            FSMWallet.connect_wallet_constructor_command_add_address,
             FSMWallet.transfer_choose_sender_wallet,
             FSMWallet.choose_transaction_wallet,
             FSMWallet.crypto_price_input,
         ]:
             await state.clear()  # или await state.set_state(default_state)
             await callback.message.edit_text(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
-        elif current_state == FSMWallet.create_wallet_add_description:
+        elif current_state in [
+            FSMWallet.create_wallet_constructor_command_add_description,
+            FSMWallet.create_wallet_from_seed_add_description,
+            FSMWallet.connect_wallet_constructor_command_add_description,
+            FSMWallet.connect_wallet_qr_add_code
+
+        ]:
             await state.clear()  # или await state.set_state(default_state)
             await callback.message.answer(LEXICON["back_to_main_menu"], reply_markup=main_keyboard)
         # Избегаем ощущения - бот завис и избегаем исключение - если два раза подряд нажать на одну и ту же кнопку

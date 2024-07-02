@@ -20,14 +20,15 @@ from config_data.config import config
 from database.database import init_database
 from handlers import (
     user_handlers,
-    create_wallet_handlers,
+    create_wallet_constructor_command_handlers,
     create_wallet_from_seed_handlers,
-    connect_wallet_handlers,
+    connect_wallet_constructor_command_handlers,
     transfer_handlers,
     transaction_handlers,
     other_handlers,
     back_button_handler,
-    delete_wallet_handlers, main_menu_button_handler, get_crypto_price,
+    delete_wallet_handlers, main_menu_button_handler, get_crypto_price, connect_wallet_qr_handlers,
+    connect_wallet_from_seed_handlers,
 )
 from logger_config import logger
 
@@ -61,16 +62,28 @@ async def main() -> None:
 
     # Регистрируем роутеры в диспетчере
     dp.include_router(user_handlers.user_router)
-    dp.include_router(create_wallet_handlers.create_wallet_router)
+    ####################################################################################################################
+    dp.include_router(create_wallet_constructor_command_handlers.create_wallet_constructor_command_router)
     dp.include_router(create_wallet_from_seed_handlers.create_wallet_from_seed_router)
-    dp.include_router(connect_wallet_handlers.connect_wallet_router)
-    dp.include_router(transfer_handlers.transfer_router)
-    dp.include_router(transaction_handlers.transaction_router)
-    dp.include_router(back_button_handler.back_button_router)
-    dp.include_router(main_menu_button_handler.main_menu_button_router)
-    dp.include_router(get_crypto_price.crypto_price_router)
+    ####################################################################################################################
     dp.include_router(delete_wallet_handlers.delete_wallet_router)
+    ####################################################################################################################
+    dp.include_router(connect_wallet_constructor_command_handlers.connect_wallet_constructor_command_router)
+    dp.include_router(connect_wallet_from_seed_handlers.connect_wallet_from_seed_router)
+    dp.include_router(connect_wallet_qr_handlers.connect_wallet_from_qr_router)
+    ####################################################################################################################
+    dp.include_router(transfer_handlers.transfer_router)
+    ####################################################################################################################
+    dp.include_router(transaction_handlers.transaction_router)
+    ####################################################################################################################
+    dp.include_router(get_crypto_price.crypto_price_router)
+    ####################################################################################################################
+    dp.include_router(back_button_handler.back_button_router)
+    ####################################################################################################################
+    dp.include_router(main_menu_button_handler.main_menu_button_router)
+    ####################################################################################################################
     dp.include_router(other_handlers.other_router)
+    ####################################################################################################################
     # Проверяем наличие базы данных и инициализируем ее при необходимости
     await init_database()
 

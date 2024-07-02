@@ -13,6 +13,8 @@ def is_valid_wallet_name(name: str) -> bool:
         Returns:
             bool: True if the wallet name is valid, False otherwise.
     """
+    if name is None:
+        return False
     # Создаем регулярное выражение для проверки имени кошелька.
     # ^ - начало строки
     # [\w\d\s\-_]+ - один или более символов, которые могут быть буквами, цифрами, пробелами, дефисами или
@@ -25,14 +27,17 @@ def is_valid_wallet_name(name: str) -> bool:
 
 def is_valid_wallet_description(description: str) -> bool:
     """
-        Checks the validity of a wallet description.
+    Checks the validity of a wallet description.
 
-        Args:
-            description (str): The description of the wallet.
+    Args:
+        description (str): The description of the wallet.
 
-        Returns:
-            bool: True if the wallet description is valid, False otherwise.
+    Returns:
+        bool: True if the wallet description is valid, False otherwise.
     """
+    if description is None:
+        return False
+
     # Проверка наличия описания
     if not description.strip():
         return False
@@ -52,14 +57,16 @@ def is_valid_wallet_description(description: str) -> bool:
 
 def is_valid_wallet_seed_phrase(seed_phrase: str) -> bool:
     """
-        Checks the validity of a wallet seed phrase.
+    Checks the validity of a wallet seed phrase.
 
-        Args:
-            seed_phrase (str): The seed phrase of the wallet.
+    Args:
+        seed_phrase (str): The seed phrase of the wallet.
 
-        Returns:
-            bool: True if the wallet seed phrase is valid, False otherwise.
+    Returns:
+        bool: True if the wallet seed phrase is valid, False otherwise.
     """
+    if seed_phrase is None:
+        return False
     seed_phrase_list = seed_phrase.strip().split()
 
     if len(seed_phrase_list) in [12, 24]:

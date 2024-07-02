@@ -1,12 +1,17 @@
 # solana_wallet_telegram_bot/config_data/config.py
 
 from typing import Union, List
+
 from httpx import Timeout
 from pydantic.v1 import BaseSettings, SecretStr
 
 # Константа для определения URL-адреса узла Solana в тестовой сети Devnet
 SOLANA_NODE_URL = "https://api.testnet.solana.com"
 # SOLANA_NODE_URL = "https://api.devnet.solana.com"
+
+# Константа для определения пути деривации Solana
+# Этот путь используется для генерации ключей и адресов кошельков на основе стандарта BIP44.
+SOLANA_DERIVATION_PATH = "m/44'/501'/0'/0'"
 
 # Например, установить таймаут на чтение ответа 120 секунд, таймаут на соединение 20 секунд
 timeout_settings = Timeout(read=120.0, connect=20.0, write=None, pool=None)
@@ -33,6 +38,10 @@ CRYPTO_EXCHANGES: List[str] = ["binance", "kucoin", "bitfinex"]
 # Константа для валюты
 DEFAULT_CURRENCY = "USDT"
 
+# Константа для URL-адреса Web App для сканирования QR-кодов
+WEB_APP_URL = "https://3631-109-87-155-248.ngrok-free.app"
+
+
 
 class Settings(BaseSettings):
     """
@@ -47,12 +56,12 @@ class Settings(BaseSettings):
             bot_token (SecretStr): Token for the bot.
             admin_ids (Union[list[int], int]): List of bot administrators' IDs.
     """
-    db_engine: str                    # движок бд
-    db_name: str                      # Название базы данных
-    db_host: str                      # URL-адрес базы данных
-    db_user: str                      # Имя пользователя базы данных
-    db_password: SecretStr            # Пароль к базе данных
-    bot_token: SecretStr              # Токена бота
+    db_engine: str  # движок бд
+    db_name: str  # Название базы данных
+    db_host: str  # URL-адрес базы данных
+    db_user: str  # Имя пользователя базы данных
+    db_password: SecretStr  # Пароль к базе данных
+    bot_token: SecretStr  # Токена бота
     admin_ids: Union[list[int], int]  # Список id администраторов бота
 
     class Config:
@@ -73,4 +82,3 @@ class Settings(BaseSettings):
 
 # Создание экземпляра класса Settings для хранения конфигурационных данных
 config: Settings = Settings()
-

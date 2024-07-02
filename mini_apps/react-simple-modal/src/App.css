@@ -1,0 +1,85 @@
+.scaner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+}
+
+#qrCodeContainer {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+/*#scan-line {*/
+/*    position: absolute;*/
+/*    top: 0;*/
+/*    left: 0;*/
+/*    width: 100%;*/
+/*    height: 2px;*/
+/*    background-color: #ff0000;*/
+/*    animation: scanAnimation 2s infinite;*/
+/*}*/
+
+#qr-shaded-region {
+    border-width: 50px !important;
+    animation-fill-mode: forwards;
+}
+
+/*@keyframes scanAnimation {*/
+/*    0% {*/
+/*        background-position: 0 0; !* Начальное положение фона *!*/
+/*    }*/
+/*    100% {*/
+/*        background-position: 0 100%; !* Конечное положение фона *!*/
+/*    }*/
+/*}*/
+
+
+video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto !important;
+    min-width: 100%;
+    min-height: 100%;
+    transform: translate(-50%, -50%);
+}
+
+.qr-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    font-size: 18px;
+    color: rgb(255, 255, 255);
+    text-align: center;
+    word-break: break-all;
+}
+
+.start-button {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background-color: #d81414;
+    border: 0;
+    border-radius: 7px;
+    font-size: 20px;
+    color: #fff;
+}
