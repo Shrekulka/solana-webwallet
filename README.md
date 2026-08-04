@@ -47,7 +47,7 @@ Example `.env`:
 ```bash
 # Settings for the token and list of administrators for the bot.
 # BOT_TOKEN - token for accessing the Telegram API.
-BOT_TOKEN=5424991242:AAGwomxQz1p46bRi_2m3V7kvJlt5RjK9yr0
+BOT_TOKEN=<your-telegram-bot-token>
 # ADMIN_IDS - list of bot administrator IDs, separated by comma.
 ADMIN_IDS=[173901673,124543434,143343455]
 
